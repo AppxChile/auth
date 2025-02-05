@@ -1,4 +1,4 @@
-package com.auth.auth;
+package com.auth.auth.controllers;
 
 import java.util.List;
 

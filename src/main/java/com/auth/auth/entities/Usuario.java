@@ -1,6 +1,7 @@
 package com.auth.auth.entities;
 
 import java.util.List;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -22,32 +23,29 @@ public class Usuario {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
-
-  
-    @JsonIgnoreProperties({"usuarios","handler","hibernateLazyInitializer"})
+    @JsonIgnoreProperties({ "usuarios", "handler", "hibernateLazyInitializer" })
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "usuarios_roles",
-        joinColumns = @JoinColumn(name = "usuario_id"),
-        inverseJoinColumns = @JoinColumn(name = "rol_id"),
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"usuario_id","rol_id"})}
-    )
-    
-    private List<Rol> roles ;
+    @JoinTable(name = "usuarios_roles", joinColumns = @JoinColumn(name = "usuario_id"), inverseJoinColumns = @JoinColumn(name = "rol_id"), uniqueConstraints = {
+            @UniqueConstraint(columnNames = { "usuario_id", "rol_id" }) })
 
+    private List<Rol> roles;
 
-   
+    @OneToOne
+    @JoinColumn(name = "rut", referencedColumnName = "rut") // Relaciona con el rut de Persona.
+    private Persona persona;
 
     @Transient
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private boolean admin=false;
+    private boolean admin = false;
 
     @Column(nullable = false)
     private boolean enabled = false;
 
+    @Column(unique = true)
+    private String activationToken;
 
-    
-    public Usuario() {}
+    public Usuario() {
+    }
 
     public Usuario(String username, String password) {
         this.username = username;
@@ -86,8 +84,6 @@ public class Usuario {
         this.roles = roles;
     }
 
-  
-
     public boolean isAdmin() {
         return admin;
     }
@@ -104,8 +100,24 @@ public class Usuario {
         this.enabled = enabled;
     }
 
+    public String generateActivationToken() {
+        return UUID.randomUUID().toString();
+    }
 
+    public String getActivationToken() {
+        return activationToken;
+    }
 
-    
-    
+    public void setActivationToken(String activationToken) {
+        this.activationToken = activationToken;
+    }
+
+    public Persona getPersona() {
+        return persona;
+    }
+
+    public void setPersona(Persona persona) {
+        this.persona = persona;
+    }
+
 }

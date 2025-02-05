@@ -18,16 +18,13 @@ public class Rol {
     @Column(unique = true, nullable = false)
     private String name;
 
-    @JsonIgnoreProperties({"roles","handler","hibernateLazyInitializer"})
-   @ManyToMany(mappedBy = "roles")
+    @JsonIgnoreProperties({ "roles", "handler", "hibernateLazyInitializer" })
+    @ManyToMany(mappedBy = "roles")
     private List<Usuario> usuarios;
 
-
-
-  
-  public Rol(){
-    this.usuarios = new ArrayList<>();
-  }
+    public Rol() {
+        this.usuarios = new ArrayList<>();
+    }
 
     public Rol(String name) {
         this.name = name;
@@ -57,5 +54,4 @@ public class Rol {
         this.usuarios = usuarios;
     }
 
-  
 }
