@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.auth.auth.api.PersonaResponse;
+import com.auth.auth.dto.UsuarioResponse;
 import com.auth.auth.entities.Persona;
 import com.auth.auth.entities.Rol;
 import com.auth.auth.entities.Usuario;
@@ -51,7 +52,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     
 
     @Override
-    public Usuario save(Usuario usuario) {
+    public UsuarioResponse save(Usuario usuario) {
         Optional<Rol> optRol = rolRepository.findByName("ROLE_USER");
         List<Rol> roles = new ArrayList<>();
 
@@ -81,7 +82,16 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 
 
-        return usuarioRepository.save(usuario);
+        usuario =  usuarioRepository.save(usuario);
+
+        UsuarioResponse usuarioResponse = new UsuarioResponse();
+
+        usuarioResponse.setUsername(usuario.getUsername());
+        usuarioResponse.setActivationToken(usuario.getActivationToken());
+
+        return usuarioResponse;
+
+
     }
 
 }
