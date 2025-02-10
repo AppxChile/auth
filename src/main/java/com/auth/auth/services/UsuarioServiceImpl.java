@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.auth.auth.api.PersonaResponse;
+import com.auth.auth.dto.ChangeMailRequest;
 import com.auth.auth.dto.UsuarioResponse;
 import com.auth.auth.entities.Persona;
 import com.auth.auth.entities.Rol;
@@ -16,6 +17,7 @@ import com.auth.auth.mail.EmailService;
 import com.auth.auth.repositories.PersonaRepository;
 import com.auth.auth.repositories.RolRepository;
 import com.auth.auth.repositories.UsuarioRepository;
+
 
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
@@ -38,7 +40,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
-        this.emailService= emailService;
+        this.emailService = emailService;
         this.apiService = apiService;
         this.personaRepository = personaRepository;
 
@@ -48,8 +50,6 @@ public class UsuarioServiceImpl implements UsuarioService {
     public List<Usuario> findAll() {
         return usuarioRepository.findAll();
     }
-
-    
 
     @Override
     public UsuarioResponse save(Usuario usuario) {
@@ -76,13 +76,11 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         usuario.setPersona(persona);
 
-                String activationLink = "http://localhost:8080/api/usuarios/activate?token=" + usuario.getActivationToken();
+        String activationLink = "http://localhost:8080/api/usuarios/activate?token=" + usuario.getActivationToken();
         emailService.sendMail(personaResponse.getEmail(), "Activa tu cuenta",
                 "Hola " + usuario.getUsername() + ", activa tu cuenta con el siguiente enlace: " + activationLink);
 
-
-
-        usuario =  usuarioRepository.save(usuario);
+        usuario = usuarioRepository.save(usuario);
 
         UsuarioResponse usuarioResponse = new UsuarioResponse();
 
@@ -91,9 +89,27 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         return usuarioResponse;
 
+    }
+
+    @Override
+    public void changeMail(ChangeMailRequest request) {
+
+        Integer rut = request.getRut();
+        String email = request.getEmail();
+
+        Persona persona = personaRepository.findByRut(rut)
+                .orElseThrow(() -> new IllegalArgumentException("Persona no encontrada"));
+
+        Usuario usuario = usuarioRepository.findByPersona(persona).orElseThrow();
+
+        usuario.setEnabled(false);
+        usuario.setActivationToken(usuario.generateActivationToken());
+
+        usuarioRepository.save(usuario);
+
+        String activationLink = "http://localhost:8080/api/register/activate?token=" + usuario.getActivationToken();
+        emailService.sendMail(email, "Cambio de correo ", activationLink);
 
     }
 
 }
-
-
