@@ -11,7 +11,7 @@ import com.auth.auth.services.PasswordRecoveryService;
 
 
 @RestController
-@RequestMapping("/api/usuarios")
+@RequestMapping("/auth/api/usuarios")
 public class PasswordController {
 
     private final PasswordRecoveryService passwordRecoveryService;

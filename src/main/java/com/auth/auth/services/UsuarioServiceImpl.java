@@ -63,6 +63,11 @@ public class UsuarioServiceImpl implements UsuarioService {
             optRolAdmin.ifPresent(roles::add);
         }
 
+        if(usuario.isFunc()){
+            Optional<Rol> optRolAdmin = rolRepository.findByName("ROLE_FUNC");
+            optRolAdmin.ifPresent(roles::add);
+        }
+
         usuario.setRoles(roles);
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
 

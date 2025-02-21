@@ -11,7 +11,7 @@ import com.auth.auth.repositories.UsuarioRepository;
 
 
 @RestController
-@RequestMapping("/api/usuarios")
+@RequestMapping("/auth/api/usuarios")
 @CrossOrigin(origins = "http://localhost:5173")
 public class ActivationController {
 

@@ -6,6 +6,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.crypto.SecretKey;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 import com.auth.auth.security.SimpleGrantedAuthorityJsonCreator;
+import com.auth.auth.utils.JwtUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.Claims;
@@ -28,8 +31,11 @@ import static com.auth.auth.security.TokenJwtConfig.*;
 
 public class JwtValidationFilter extends BasicAuthenticationFilter {
 
-    public JwtValidationFilter(AuthenticationManager authenticationManager) {
+     private final JwtUtils jwtUtils;
+
+    public JwtValidationFilter(AuthenticationManager authenticationManager, JwtUtils jwtUtils) {
         super(authenticationManager);
+        this.jwtUtils=jwtUtils;
     }
 
     @Override
@@ -46,7 +52,8 @@ public class JwtValidationFilter extends BasicAuthenticationFilter {
         String token = header.replace(PREFIX_TOKEN, "");
 
         try {
-            Claims claims = Jwts.parser().verifyWith(SECRET_KEY).build().parseSignedClaims(token).getPayload();
+            SecretKey secreto = jwtUtils.getSecretKey();
+            Claims claims = Jwts.parser().verifyWith(secreto).build().parseSignedClaims(token).getPayload();
             String username = claims.getSubject();
             Object authoritiesClaims = claims.get("authorities");
 
