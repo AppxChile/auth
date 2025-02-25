@@ -4,11 +4,13 @@ public class AuthenticationResponse {
 
     private String token;
     private Boolean successful;
+    private Boolean func;
 
     
-    public AuthenticationResponse(String token,  Boolean successful) {
+    public AuthenticationResponse(String token,  Boolean successful, Boolean func) {
         this.token = token;
         this.successful = successful;
+        this.func = func;
     }
 
 
@@ -31,6 +33,16 @@ public class AuthenticationResponse {
 
     public void setSuccessful(Boolean successful) {
         this.successful = successful;
+    }
+
+
+    public Boolean getFunc() {
+        return func;
+    }
+
+
+    public void setFunc(Boolean func) {
+        this.func = func;
     }
 
 

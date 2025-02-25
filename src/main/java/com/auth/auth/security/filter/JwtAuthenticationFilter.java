@@ -6,6 +6,7 @@ import java.util.Date;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -33,12 +34,11 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     private final JwtUtils jwtUtils;
 
+
     public JwtAuthenticationFilter(AuthenticationManager authenticationManager, JwtUtils jwtUtils) {
         this.authenticationManager = authenticationManager;
-        this.jwtUtils = jwtUtils; 
+        this.jwtUtils = jwtUtils;
     }
-
-    
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
@@ -75,7 +75,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 .add("authorities", new ObjectMapper().writeValueAsString(roles))
                 .add("username", username).build();
 
-                SecretKey secretKey = jwtUtils.getSecretKey();
+        SecretKey secretKey = jwtUtils.getSecretKey();
 
         String token = Jwts.builder()
                 .subject(username)
@@ -87,8 +87,10 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         response.addHeader(HEADER_AUTHORIZATION, PREFIX_TOKEN + token);
 
-        AuthenticationResponse body = new AuthenticationResponse(token,  true);
+        boolean isFunc = roles.stream()
+                .anyMatch(role -> role.getAuthority().equals("ROLE_FUNC"));
 
+        AuthenticationResponse body = new AuthenticationResponse(token, true,isFunc);
 
         response.getWriter().write(new ObjectMapper().writeValueAsString(body));
         response.setContentType(CONTENT_TYPE);
@@ -99,8 +101,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException failed) throws IOException, ServletException {
 
-                AuthenticationResponse body = new AuthenticationResponse("", false);
-
+        AuthenticationResponse body = new AuthenticationResponse("", false,false);
 
         response.getWriter().write(new ObjectMapper().writeValueAsString(body));
         response.setStatus(401);
