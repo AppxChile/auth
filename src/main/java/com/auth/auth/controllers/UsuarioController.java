@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.auth.auth.dto.UsuarioRequest;
+import com.auth.auth.dto.UsuarioResponse;
 import com.auth.auth.entities.Usuario;
 import com.auth.auth.services.UsuarioService;
 
@@ -33,6 +35,37 @@ public class UsuarioController {
 
     @PostMapping("/create")
     public ResponseEntity<Object> create(@RequestBody Usuario usuario){
-        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.save(usuario));
+
+        try {
+            UsuarioResponse newUsuario = usuarioService.save(usuario);
+            return ResponseEntity.status(HttpStatus.CREATED).body(newUsuario);
+
+
+        } catch (Exception e) {
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+
+        
     }
+
+    @PostMapping("/create-func")
+    public ResponseEntity<Object> createFunc(@RequestBody UsuarioRequest usuario){
+
+        try {
+            UsuarioResponse newUsuario = usuarioService.saveUserFunc(usuario);
+            return ResponseEntity.status(HttpStatus.CREATED).body(newUsuario);
+
+
+        } catch (Exception e) {
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+
+        
+    }
+
+
+    
+
 }

@@ -3,16 +3,18 @@ package com.auth.auth.services;
 import java.util.List;
 
 import com.auth.auth.dto.ChangeMailRequest;
+import com.auth.auth.dto.UsuarioRequest;
 import com.auth.auth.dto.UsuarioResponse;
 import com.auth.auth.entities.Usuario;
 
 public interface UsuarioService {
 
-      List<Usuario> findAll();
+  List<Usuario> findAll();
 
-    UsuarioResponse save(Usuario usuario);
+  UsuarioResponse save(Usuario usuario);
 
-    void changeMail(ChangeMailRequest request);
+  UsuarioResponse saveUserFunc(UsuarioRequest usuario);
 
+  void changeMail(ChangeMailRequest request);
 
 }

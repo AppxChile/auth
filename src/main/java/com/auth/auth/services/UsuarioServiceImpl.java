@@ -7,8 +7,10 @@ import java.util.Optional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.auth.auth.api.PersonaRequest;
 import com.auth.auth.api.PersonaResponse;
 import com.auth.auth.dto.ChangeMailRequest;
+import com.auth.auth.dto.UsuarioRequest;
 import com.auth.auth.dto.UsuarioResponse;
 import com.auth.auth.entities.Persona;
 import com.auth.auth.entities.Rol;
@@ -17,7 +19,6 @@ import com.auth.auth.mail.EmailService;
 import com.auth.auth.repositories.PersonaRepository;
 import com.auth.auth.repositories.RolRepository;
 import com.auth.auth.repositories.UsuarioRepository;
-
 
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
@@ -63,7 +64,7 @@ public class UsuarioServiceImpl implements UsuarioService {
             optRolAdmin.ifPresent(roles::add);
         }
 
-        if(usuario.isFunc()){
+        if (usuario.isFunc()) {
             Optional<Rol> optRolAdmin = rolRepository.findByName("ROLE_FUNC");
             optRolAdmin.ifPresent(roles::add);
         }
@@ -81,7 +82,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         usuario.setPersona(persona);
 
-        String activationLink = "http://localhost:8080/api/usuarios/activate?token=" + usuario.getActivationToken();
+        String activationLink = "http://localhost:8083/auth/api/usuarios/activate?token="
+                + usuario.getActivationToken();
         emailService.sendMail(personaResponse.getEmail(), "Activa tu cuenta",
                 "Hola " + usuario.getUsername() + ", activa tu cuenta con el siguiente enlace: " + activationLink);
 
@@ -115,6 +117,69 @@ public class UsuarioServiceImpl implements UsuarioService {
         String activationLink = "http://localhost:8080/api/register/activate?token=" + usuario.getActivationToken();
         emailService.sendMail(email, "Cambio de correo ", activationLink);
 
+    }
+
+    @Override
+    public UsuarioResponse saveUserFunc(UsuarioRequest usuarioRequest) {
+
+        // Obtener roles y asignarlos según corresponda
+        List<Rol> roles = new ArrayList<>();
+        rolRepository.findByName("ROLE_USER").ifPresent(roles::add);
+
+        if (usuarioRequest.isAdmin()) {
+            rolRepository.findByName("ROLE_ADMIN").ifPresent(roles::add);
+        }
+
+        if (usuarioRequest.isFunc()) {
+            rolRepository.findByName("ROLE_FUNC").ifPresent(roles::add);
+        }
+
+        // Buscar persona en la API
+        PersonaResponse personaResponse = apiService.obtenerDatos(usuarioRequest.getRut());
+        Persona persona;
+
+        if (personaResponse == null) {
+            // Si no existe en la API, crear una nueva persona
+            PersonaRequest personaRequest = new PersonaRequest();
+            personaRequest.setRut(usuarioRequest.getRut());
+            personaRequest.setVrut(usuarioRequest.getVrut());
+            personaRequest.setNombres(usuarioRequest.getNombres());
+            personaRequest.setPaterno(usuarioRequest.getPaterno());
+            personaRequest.setMaterno(usuarioRequest.getMaterno());
+            personaRequest.setEmail(usuarioRequest.getEmail());
+
+            apiService.crearPersona(personaRequest);
+
+            // Crear y guardar la persona en la BD
+            persona = new Persona();
+            persona.setRut(usuarioRequest.getRut());
+            persona = personaRepository.save(persona);
+
+        } else {
+            // Si la API devuelve datos, usar la persona existente
+            persona = personaRepository.findByRut(usuarioRequest.getRut())
+                    .orElseGet(() -> {
+                        Persona nuevaPersona = new Persona();
+                        nuevaPersona.setRut(usuarioRequest.getRut());
+                        return personaRepository.save(nuevaPersona);
+                    });
+        }
+
+        // Crear y guardar usuario
+        Usuario usuario = new Usuario();
+        usuario.setUsername(usuarioRequest.getRut().toString());
+        usuario.setPassword(passwordEncoder.encode(usuarioRequest.getPassword()));
+        usuario.setRoles(roles);
+        usuario.setPersona(persona);
+        usuario.setEnabled(true);
+
+        usuario = usuarioRepository.save(usuario);
+
+        // Construir respuesta
+        UsuarioResponse usuarioResponse = new UsuarioResponse();
+        usuarioResponse.setUsername(usuario.getUsername());
+
+        return usuarioResponse;
     }
 
 }
