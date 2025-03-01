@@ -1,6 +1,7 @@
 package com.auth.auth.services;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -122,24 +123,39 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public UsuarioResponse saveUserFunc(UsuarioRequest usuarioRequest) {
 
-        // Obtener roles y asignarlos según corresponda
-        List<Rol> roles = new ArrayList<>();
-        rolRepository.findByName("ROLE_USER").ifPresent(roles::add);
+    // Obtener usuario si ya existe en la BD
+    Usuario usuario = usuarioRepository.findByUsername(usuarioRequest.getRut().toString()).orElse(null);
 
-        if (usuarioRequest.isAdmin()) {
-            rolRepository.findByName("ROLE_ADMIN").ifPresent(roles::add);
-        }
+    // Obtener roles y asignarlos según corresponda
+    List<Rol> roles = new ArrayList<>();
+    rolRepository.findByName("ROLE_USER").ifPresent(roles::add);
 
-        if (usuarioRequest.isFunc()) {
-            rolRepository.findByName("ROLE_FUNC").ifPresent(roles::add);
-        }
+    if (usuarioRequest.isAdmin()) {
+        rolRepository.findByName("ROLE_ADMIN").ifPresent(roles::add);
+    }
 
-        // Buscar persona en la API
-        PersonaResponse personaResponse = apiService.obtenerDatos(usuarioRequest.getRut());
-        Persona persona;
+    if (usuarioRequest.isFunc()) {
+        rolRepository.findByName("ROLE_FUNC").ifPresent(roles::add);
+    }
 
-        if (personaResponse == null) {
-            // Si no existe en la API, crear una nueva persona
+    // Si el usuario ya existe, solo actualizar roles y devolver respuesta
+    if (usuario != null) {
+        usuario.getRoles().addAll(roles); // Agregar los nuevos roles
+        usuario.setRoles(new ArrayList<>(new HashSet<>(usuario.getRoles()))); // Evitar duplicados
+        usuarioRepository.save(usuario);
+
+        UsuarioResponse usuarioResponse = new UsuarioResponse();
+        usuarioResponse.setUsername(usuario.getUsername());
+        return usuarioResponse;
+    }
+
+    // Buscar persona en la API
+    PersonaResponse personaResponse = apiService.obtenerDatos(usuarioRequest.getRut());
+    Persona persona = personaRepository.findByRut(usuarioRequest.getRut()).orElse(null);
+
+    if (personaResponse == null) {
+        // Si la persona NO existe en la BD local, crearla
+        if (persona == null) {
             PersonaRequest personaRequest = new PersonaRequest();
             personaRequest.setRut(usuarioRequest.getRut());
             personaRequest.setVrut(usuarioRequest.getVrut());
@@ -148,34 +164,45 @@ public class UsuarioServiceImpl implements UsuarioService {
             personaRequest.setMaterno(usuarioRequest.getMaterno());
             personaRequest.setEmail(usuarioRequest.getEmail());
 
-            apiService.crearPersona(personaRequest);
+            apiService.crearPersona(personaRequest); // Se crea en la API
 
-            // Crear y guardar la persona en la BD
+            // También la guardamos en la BD local
             persona = new Persona();
             persona.setRut(usuarioRequest.getRut());
             persona = personaRepository.save(persona);
-
-        } else {
-            // Si la API devuelve datos, usar la persona existente
-            persona = personaRepository.findByRut(usuarioRequest.getRut())
-                    .orElseGet(() -> {
-                        Persona nuevaPersona = new Persona();
-                        nuevaPersona.setRut(usuarioRequest.getRut());
-                        return personaRepository.save(nuevaPersona);
-                    });
         }
+    } else {
+        // Si la API sí devuelve datos y la persona no está en la BD, guardarla en la BD
+        if (persona == null) {
+            persona = new Persona();
+            persona.setRut(usuarioRequest.getRut());
+            persona = personaRepository.save(persona);
+        }
+    }
 
-        // Crear y guardar usuario
-        Usuario usuario = new Usuario();
-        usuario.setUsername(usuarioRequest.getRut().toString());
-        usuario.setPassword(passwordEncoder.encode(usuarioRequest.getPassword()));
-        usuario.setRoles(roles);
-        usuario.setPersona(persona);
-        usuario.setEnabled(true);
+    // Crear nuevo usuario con la persona encontrada o creada
+    usuario = new Usuario();
+    usuario.setUsername(usuarioRequest.getRut().toString());
+    usuario.setPassword(passwordEncoder.encode(usuarioRequest.getPassword()));
+    usuario.setRoles(roles);
+    usuario.setPersona(persona);
+    usuario.setEnabled(true);
 
-        usuario = usuarioRepository.save(usuario);
+    usuario = usuarioRepository.save(usuario);
 
-        // Construir respuesta
+    // Respuesta
+    UsuarioResponse usuarioResponse = new UsuarioResponse();
+    usuarioResponse.setUsername(usuario.getUsername());
+
+    return usuarioResponse;
+}
+
+    
+    @Override
+    public UsuarioResponse buscarUsuario(String username){
+
+        Usuario usuario = usuarioRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("No existe el usuario"));
+
         UsuarioResponse usuarioResponse = new UsuarioResponse();
         usuarioResponse.setUsername(usuario.getUsername());
 
