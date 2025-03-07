@@ -1,6 +1,7 @@
 package com.auth.auth.controllers;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,7 +12,8 @@ import com.auth.auth.services.PasswordRecoveryService;
 
 
 @RestController
-@RequestMapping("/auth/api/usuarios")
+@RequestMapping("/api/auth/usuarios")
+@CrossOrigin(origins = {"https://dev.appx.cl/", "http//localhost:5173"})
 public class PasswordController {
 
     private final PasswordRecoveryService passwordRecoveryService;

@@ -12,8 +12,8 @@ import com.auth.auth.dto.ChangeMailRequest;
 import com.auth.auth.services.UsuarioService;
 
 @RestController
-@RequestMapping("/auth/api/usuarios/")
-@CrossOrigin(origins = "http://localhost:5173")
+@RequestMapping("/api/auth/usuarios/")
+@CrossOrigin(origins = {"https://dev.appx.cl/", "http//localhost:5173"})
 public class EmailController {
 
     private final UsuarioService usuarioService;

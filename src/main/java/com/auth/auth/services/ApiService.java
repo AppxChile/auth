@@ -25,9 +25,9 @@ public PersonaResponse obtenerDatos(Integer rut) {
     return webClient.get()
             .uri("/{rut}", rut)
             .retrieve()
-            .onStatus(HttpStatusCode::is4xxClientError, _ -> Mono.empty())
+            .onStatus(HttpStatusCode::is4xxClientError, response -> Mono.empty())
             .bodyToMono(PersonaResponse.class)
-            .onErrorResume(WebClientResponseException.class, _ -> Mono.empty())
+            .onErrorResume(Exception.class, e -> Mono.empty())
             .block(); 
 }
 

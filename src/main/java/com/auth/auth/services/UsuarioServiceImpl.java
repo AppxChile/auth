@@ -83,7 +83,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         usuario.setPersona(persona);
 
-        String activationLink = "http://localhost:8083/auth/api/usuarios/activate?token="
+        String activationLink = "https://dev.appx.cl/api/auth/usuarios/activate?token="
                 + usuario.getActivationToken();
         emailService.sendMail(personaResponse.getEmail(), "Activa tu cuenta",
                 "Hola " + usuario.getUsername() + ", activa tu cuenta con el siguiente enlace: " + activationLink);
@@ -115,7 +115,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         usuarioRepository.save(usuario);
 
-        String activationLink = "http://localhost:8080/api/register/activate?token=" + usuario.getActivationToken();
+        String activationLink = "https://dev.appx.cl/api/auth/usuarios/activate?token=" + usuario.getActivationToken();
         emailService.sendMail(email, "Cambio de correo ", activationLink);
 
     }

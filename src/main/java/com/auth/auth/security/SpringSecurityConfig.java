@@ -66,8 +66,8 @@ public class SpringSecurityConfig {
                 return configuration;
             }))
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers(HttpMethod.POST, "/auth/api/usuarios/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/auth/api/usuarios/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/usuarios/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/auth/usuarios/**").permitAll()
                 .anyRequest().authenticated())
             .addFilter(new JwtAuthenticationFilter(authenticationManager(),jwtUtils))
             .addFilter(new JwtValidationFilter(authenticationManager(), jwtUtils))

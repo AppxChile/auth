@@ -57,7 +57,7 @@ public class PasswordRecoveryService {
         tokenRepository.save(passwordResetToken);
 
         // Crear un enlace de recuperación
-        String recoveryLink = "http://localhost:8083/api/usuarios/recovery?token=" + token;
+        String recoveryLink = "http://dev.appx.cl/api/auth/usuarios/recovery?token=" + token;
 
         PersonaResponse personaResponse = apiService.obtenerDatos(rut);
 
