@@ -1,5 +1,6 @@
 package com.auth.auth.services;
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,6 +15,7 @@ import com.auth.auth.repositories.PasswordResetTokenRepository;
 import com.auth.auth.repositories.PersonaRepository;
 import com.auth.auth.repositories.UsuarioRepository;
 
+import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -61,14 +63,21 @@ public class PasswordRecoveryService {
 
         PersonaResponse personaResponse = apiService.obtenerDatos(rut);
 
-        // Enviar el correo de recuperación
-        emailService.sendMail(personaResponse.getEmail(), "Recuperación de contraseña",
-                "Haz clic en el siguiente enlace para recuperar tu contraseña: " + recoveryLink);
+
+        Map<String, Object> variables = Map.of(
+                "nombre", personaResponse.getNombres(),
+                "recoveryLink", recoveryLink);
+
+        try {
+            emailService.sendHtmlEmail(personaResponse.getEmail(), "Recuperacion de contraseña", "recovery-template", variables);
+        } catch (MessagingException e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Transactional
     public void resetPassword(String token, String newPassword) {
-
 
         PasswordResetToken passwordResetToken = tokenRepository.findByToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("Token inválido o expirado"));

@@ -3,6 +3,7 @@ package com.auth.auth.services;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -85,8 +86,17 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         String activationLink = "https://dev.appx.cl/api/auth/usuarios/activate?token="
                 + usuario.getActivationToken();
-        emailService.sendMail(personaResponse.getEmail(), "Activa tu cuenta",
-                "Hola " + usuario.getUsername() + ", activa tu cuenta con el siguiente enlace: " + activationLink);
+
+        Map<String, Object> variables = Map.of(
+                "nombre", personaResponse.getNombres(),
+                "link", activationLink);
+
+        try {
+            emailService.sendHtmlEmail(personaResponse.getEmail(), "Activa tu registro", "register-template", variables);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         usuario = usuarioRepository.save(usuario);
 
@@ -116,92 +126,102 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuarioRepository.save(usuario);
 
         String activationLink = "https://dev.appx.cl/api/auth/usuarios/activate?token=" + usuario.getActivationToken();
-        emailService.sendMail(email, "Cambio de correo ", activationLink);
+
+        Map<String, Object> variables = Map.of(
+                "nombre", usuario.getUsername(),
+                "codigo", activationLink);
+
+        try {
+            emailService.sendHtmlEmail(email, "Correo con Thymeleaf", "email-template", variables);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
     }
 
     @Override
     public UsuarioResponse saveUserFunc(UsuarioRequest usuarioRequest) {
 
-    // Obtener usuario si ya existe en la BD
-    Usuario usuario = usuarioRepository.findByUsername(usuarioRequest.getRut().toString()).orElse(null);
+        // Obtener usuario si ya existe en la BD
+        Usuario usuario = usuarioRepository.findByUsername(usuarioRequest.getRut().toString()).orElse(null);
 
-    // Obtener roles y asignarlos según corresponda
-    List<Rol> roles = new ArrayList<>();
-    rolRepository.findByName("ROLE_USER").ifPresent(roles::add);
+        // Obtener roles y asignarlos según corresponda
+        List<Rol> roles = new ArrayList<>();
+        rolRepository.findByName("ROLE_USER").ifPresent(roles::add);
 
-    if (usuarioRequest.isAdmin()) {
-        rolRepository.findByName("ROLE_ADMIN").ifPresent(roles::add);
-    }
+        if (usuarioRequest.isAdmin()) {
+            rolRepository.findByName("ROLE_ADMIN").ifPresent(roles::add);
+        }
 
-    if (usuarioRequest.isFunc()) {
-        rolRepository.findByName("ROLE_FUNC").ifPresent(roles::add);
-    }
+        if (usuarioRequest.isFunc()) {
+            rolRepository.findByName("ROLE_FUNC").ifPresent(roles::add);
+        }
 
-    // Si el usuario ya existe, solo actualizar roles y devolver respuesta
-    if (usuario != null) {
-        usuario.getRoles().addAll(roles); // Agregar los nuevos roles
-        usuario.setRoles(new ArrayList<>(new HashSet<>(usuario.getRoles()))); // Evitar duplicados
-        usuarioRepository.save(usuario);
+        // Si el usuario ya existe, solo actualizar roles y devolver respuesta
+        if (usuario != null) {
+            usuario.getRoles().addAll(roles); // Agregar los nuevos roles
+            usuario.setRoles(new ArrayList<>(new HashSet<>(usuario.getRoles()))); // Evitar duplicados
+            usuarioRepository.save(usuario);
 
+            UsuarioResponse usuarioResponse = new UsuarioResponse();
+            usuarioResponse.setUsername(usuario.getUsername());
+            return usuarioResponse;
+        }
+
+        // Buscar persona en la API
+        PersonaResponse personaResponse = apiService.obtenerDatos(usuarioRequest.getRut());
+        Persona persona = personaRepository.findByRut(usuarioRequest.getRut()).orElse(null);
+
+        if (personaResponse == null) {
+            // Si la persona NO existe en la BD local, crearla
+            if (persona == null) {
+                PersonaRequest personaRequest = new PersonaRequest();
+                personaRequest.setRut(usuarioRequest.getRut());
+                personaRequest.setVrut(usuarioRequest.getVrut());
+                personaRequest.setNombres(usuarioRequest.getNombres());
+                personaRequest.setPaterno(usuarioRequest.getPaterno());
+                personaRequest.setMaterno(usuarioRequest.getMaterno());
+                personaRequest.setEmail(usuarioRequest.getEmail());
+
+                apiService.crearPersona(personaRequest); // Se crea en la API
+
+                // También la guardamos en la BD local
+                persona = new Persona();
+                persona.setRut(usuarioRequest.getRut());
+                persona = personaRepository.save(persona);
+            }
+        } else {
+            // Si la API sí devuelve datos y la persona no está en la BD, guardarla en la BD
+            if (persona == null) {
+                persona = new Persona();
+                persona.setRut(usuarioRequest.getRut());
+                persona = personaRepository.save(persona);
+            }
+        }
+
+        // Crear nuevo usuario con la persona encontrada o creada
+        usuario = new Usuario();
+        usuario.setUsername(usuarioRequest.getRut().toString());
+        usuario.setPassword(passwordEncoder.encode(usuarioRequest.getPassword()));
+        usuario.setRoles(roles);
+        usuario.setPersona(persona);
+        usuario.setEnabled(true);
+
+        usuario = usuarioRepository.save(usuario);
+
+        // Respuesta
         UsuarioResponse usuarioResponse = new UsuarioResponse();
         usuarioResponse.setUsername(usuario.getUsername());
+
         return usuarioResponse;
     }
 
-    // Buscar persona en la API
-    PersonaResponse personaResponse = apiService.obtenerDatos(usuarioRequest.getRut());
-    Persona persona = personaRepository.findByRut(usuarioRequest.getRut()).orElse(null);
-
-    if (personaResponse == null) {
-        // Si la persona NO existe en la BD local, crearla
-        if (persona == null) {
-            PersonaRequest personaRequest = new PersonaRequest();
-            personaRequest.setRut(usuarioRequest.getRut());
-            personaRequest.setVrut(usuarioRequest.getVrut());
-            personaRequest.setNombres(usuarioRequest.getNombres());
-            personaRequest.setPaterno(usuarioRequest.getPaterno());
-            personaRequest.setMaterno(usuarioRequest.getMaterno());
-            personaRequest.setEmail(usuarioRequest.getEmail());
-
-            apiService.crearPersona(personaRequest); // Se crea en la API
-
-            // También la guardamos en la BD local
-            persona = new Persona();
-            persona.setRut(usuarioRequest.getRut());
-            persona = personaRepository.save(persona);
-        }
-    } else {
-        // Si la API sí devuelve datos y la persona no está en la BD, guardarla en la BD
-        if (persona == null) {
-            persona = new Persona();
-            persona.setRut(usuarioRequest.getRut());
-            persona = personaRepository.save(persona);
-        }
-    }
-
-    // Crear nuevo usuario con la persona encontrada o creada
-    usuario = new Usuario();
-    usuario.setUsername(usuarioRequest.getRut().toString());
-    usuario.setPassword(passwordEncoder.encode(usuarioRequest.getPassword()));
-    usuario.setRoles(roles);
-    usuario.setPersona(persona);
-    usuario.setEnabled(true);
-
-    usuario = usuarioRepository.save(usuario);
-
-    // Respuesta
-    UsuarioResponse usuarioResponse = new UsuarioResponse();
-    usuarioResponse.setUsername(usuario.getUsername());
-
-    return usuarioResponse;
-}
-
-    
     @Override
-    public UsuarioResponse buscarUsuario(String username){
+    public UsuarioResponse buscarUsuario(String username) {
 
-        Usuario usuario = usuarioRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("No existe el usuario"));
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("No existe el usuario"));
 
         UsuarioResponse usuarioResponse = new UsuarioResponse();
         usuarioResponse.setUsername(usuario.getUsername());
