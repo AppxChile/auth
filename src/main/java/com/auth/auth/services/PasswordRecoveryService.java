@@ -3,6 +3,7 @@ package com.auth.auth.services;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -10,12 +11,11 @@ import com.auth.auth.api.PersonaResponse;
 import com.auth.auth.entities.PasswordResetToken;
 import com.auth.auth.entities.Persona;
 import com.auth.auth.entities.Usuario;
-import com.auth.auth.mail.EmailService;
+import com.auth.auth.exceptions.SendMailExceptions;
 import com.auth.auth.repositories.PasswordResetTokenRepository;
 import com.auth.auth.repositories.PersonaRepository;
 import com.auth.auth.repositories.UsuarioRepository;
 
-import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -23,23 +23,24 @@ public class PasswordRecoveryService {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
     private final PasswordResetTokenRepository tokenRepository;
     private final PersonaRepository personaRepository;
     private final ApiService apiService;
+    private final String urlRecovery;
 
     public PasswordRecoveryService(UsuarioRepository usuarioRepository,
             PasswordEncoder passwordEncoder,
-            EmailService emailService,
+
             PasswordResetTokenRepository tokenRepository,
             PersonaRepository personaRepository,
-            ApiService apiService) {
+            ApiService apiService,
+            @Value("${api.recovery.url}") String urlRecovery) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
-        this.emailService = emailService;
         this.tokenRepository = tokenRepository;
         this.personaRepository = personaRepository;
         this.apiService = apiService;
+        this.urlRecovery = urlRecovery;
     }
 
     public void sendRecoveryEmail(Integer rut) {
@@ -59,19 +60,19 @@ public class PasswordRecoveryService {
         tokenRepository.save(passwordResetToken);
 
         // Crear un enlace de recuperación
-        String recoveryLink = "http://dev.appx.cl/api/auth/usuarios/recovery?token=" + token;
+        String recoveryLink = urlRecovery + token;
 
-        PersonaResponse personaResponse = apiService.obtenerDatos(rut);
-
+        PersonaResponse personaResponse = apiService.getPersonaInfo(rut);
 
         Map<String, Object> variables = Map.of(
                 "nombre", personaResponse.getNombres(),
                 "recoveryLink", recoveryLink);
 
         try {
-            emailService.sendHtmlEmail(personaResponse.getEmail(), "Recuperacion de contraseña", "recovery-template", variables);
-        } catch (MessagingException e) {
-            e.printStackTrace();
+            apiService.sendEmail(personaResponse.getEmail(), "Recuperacion de contraseña", "recovery-template",
+                    variables);
+        } catch (SendMailExceptions e) {
+            throw new SendMailExceptions("Error enviando correo de activación a " + personaResponse.getEmail());
         }
 
     }
@@ -82,23 +83,18 @@ public class PasswordRecoveryService {
         PasswordResetToken passwordResetToken = tokenRepository.findByToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("Token inválido o expirado"));
 
-        // Paso 2: Verificar la fecha de expiración del token
         if (passwordResetToken.isExpired()) {
             throw new IllegalArgumentException("El token ha expirado");
         }
 
-        // Paso 3: Actualizar la contraseña del usuario asociado al token
         Usuario usuario = passwordResetToken.getUsuario();
 
-        // Codificar la nueva contraseña
         String encodedPassword = passwordEncoder.encode(newPassword);
         usuario.setPassword(encodedPassword);
         usuarioRepository.save(usuario);
 
-        // Paso 4: Eliminar el token usado
         tokenRepository.delete(passwordResetToken);
 
-        // Mensaje final
     }
 
 }

@@ -15,7 +15,7 @@ public interface UsuarioService {
 
   UsuarioResponse saveUserFunc(UsuarioRequest usuario);
 
-  UsuarioResponse buscarUsuario(String username);
+  UsuarioResponse getUsuario(String username);
 
   void changeMail(ChangeMailRequest request);
 

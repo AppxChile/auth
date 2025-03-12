@@ -62,9 +62,9 @@ public class UsuarioController {
     }
 
     @GetMapping("/buscar/{username}")
-    public ResponseEntity<Object> buscarUsuario(@PathVariable String username){
+    public ResponseEntity<Object> getUsuario(@PathVariable String username){
         try {
-            UsuarioResponse usuarioResponse = usuarioService.buscarUsuario(username);
+            UsuarioResponse usuarioResponse = usuarioService.getUsuario(username);
             return ResponseEntity.ok().body(usuarioResponse);
 
             

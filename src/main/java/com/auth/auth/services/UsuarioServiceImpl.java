@@ -5,7 +5,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +19,7 @@ import com.auth.auth.dto.UsuarioResponse;
 import com.auth.auth.entities.Persona;
 import com.auth.auth.entities.Rol;
 import com.auth.auth.entities.Usuario;
-import com.auth.auth.mail.EmailService;
+import com.auth.auth.exceptions.SendMailExceptions;
 import com.auth.auth.repositories.PersonaRepository;
 import com.auth.auth.repositories.RolRepository;
 import com.auth.auth.repositories.UsuarioRepository;
@@ -31,21 +33,22 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     private final PasswordEncoder passwordEncoder;
 
-    private final EmailService emailService;
-
     private final ApiService apiService;
 
     private final PersonaRepository personaRepository;
 
+    private final String urlActivation;
+
     public UsuarioServiceImpl(UsuarioRepository usuarioRepository, RolRepository rolRepository,
-            PasswordEncoder passwordEncoder, EmailService emailService,
-            ApiService apiService, PersonaRepository personaRepository) {
+            PasswordEncoder passwordEncoder,
+            ApiService apiService, PersonaRepository personaRepository,
+            @Value("${api.activation.url}") String urlActivation) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
-        this.emailService = emailService;
         this.apiService = apiService;
         this.personaRepository = personaRepository;
+        this.urlActivation = urlActivation;
 
     }
 
@@ -56,57 +59,47 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public UsuarioResponse save(Usuario usuario) {
-        Optional<Rol> optRol = rolRepository.findByName("ROLE_USER");
-        List<Rol> roles = new ArrayList<>();
 
-        optRol.ifPresent(roles::add);
-
-        if (usuario.isAdmin()) {
-            Optional<Rol> optRolAdmin = rolRepository.findByName("ROLE_ADMIN");
-            optRolAdmin.ifPresent(roles::add);
-        }
-
-        if (usuario.isFunc()) {
-            Optional<Rol> optRolAdmin = rolRepository.findByName("ROLE_FUNC");
-            optRolAdmin.ifPresent(roles::add);
-        }
-
-        usuario.setRoles(roles);
+        usuario.setRoles(getRolesForUser(usuario));
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
 
         usuario.setActivationToken(usuario.generateActivationToken());
 
-        Persona persona = new Persona(Integer.parseInt(usuario.getUsername()));
+        int rut = Integer.parseInt(usuario.getUsername());
 
-        PersonaResponse personaResponse = apiService.obtenerDatos(persona.getRut());
+        Persona persona = personaRepository.findByRut(rut)
+                .orElseGet(() -> personaRepository.save(new Persona(rut)));
 
-        personaRepository.save(persona);
-
+        PersonaResponse personaResponse = apiService.getPersonaInfo(persona.getRut());
         usuario.setPersona(persona);
 
-        String activationLink = "https://dev.appx.cl/api/auth/usuarios/activate?token="
-                + usuario.getActivationToken();
-
-        Map<String, Object> variables = Map.of(
-                "nombre", personaResponse.getNombres(),
-                "link", activationLink);
-
-        try {
-            emailService.sendHtmlEmail(personaResponse.getEmail(), "Activa tu registro", "register-template", variables);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        sendMailActivation(usuario, personaResponse);
 
         usuario = usuarioRepository.save(usuario);
 
-        UsuarioResponse usuarioResponse = new UsuarioResponse();
+        return new UsuarioResponse(usuario.getUsername(), usuario.getActivationToken());
 
-        usuarioResponse.setUsername(usuario.getUsername());
-        usuarioResponse.setActivationToken(usuario.getActivationToken());
+    }
 
-        return usuarioResponse;
+    private List<Rol> getRolesForUser(Usuario usuario) {
+        List<Rol> roles = new ArrayList<>();
+        rolRepository.findByName("ROLE_USER").ifPresent(roles::add);
+        if (usuario.isAdmin())
+            rolRepository.findByName("ROLE_ADMIN").ifPresent(roles::add);
+        if (usuario.isFunc())
+            rolRepository.findByName("ROLE_FUNC").ifPresent(roles::add);
+        return roles;
+    }
 
+    private void sendMailActivation(Usuario usuario, PersonaResponse personaResponse) {
+        String activationLink = urlActivation + usuario.getActivationToken();
+        Map<String, Object> variables = Map.of("nombre", personaResponse.getNombres(), "link", activationLink);
+
+        try {
+            apiService.sendEmail(personaResponse.getEmail(), "Activa tu registro", "register-template", variables);
+        } catch (SendMailExceptions e) {
+            throw new SendMailExceptions("Error enviando correo de activación a " + personaResponse.getEmail());
+        }
     }
 
     @Override
@@ -125,14 +118,14 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         usuarioRepository.save(usuario);
 
-        String activationLink = "https://dev.appx.cl/api/auth/usuarios/activate?token=" + usuario.getActivationToken();
+        String activationLink = urlActivation + usuario.getActivationToken();
 
         Map<String, Object> variables = Map.of(
                 "nombre", usuario.getUsername(),
                 "codigo", activationLink);
 
         try {
-            emailService.sendHtmlEmail(email, "Correo con Thymeleaf", "email-template", variables);
+            apiService.sendEmail(email, "Correo con Thymeleaf", "email-template", variables);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -143,82 +136,79 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public UsuarioResponse saveUserFunc(UsuarioRequest usuarioRequest) {
 
-        // Obtener usuario si ya existe en la BD
-        Usuario usuario = usuarioRepository.findByUsername(usuarioRequest.getRut().toString()).orElse(null);
+        List<Rol> roles = getRolesForUserRequest(usuarioRequest);
 
-        // Obtener roles y asignarlos según corresponda
+        return usuarioRepository.findByUsername(usuarioRequest.getRut().toString())
+                .map(usuarioExistente -> {
+                    updateRoles(usuarioExistente, roles);
+                    return new UsuarioResponse(usuarioExistente.getUsername());
+                })
+                .orElseGet(() -> {
+                    Persona persona = getOrCreatePersonaFromApi(usuarioRequest);
+
+                    Usuario nuevoUsuario = new Usuario();
+                    nuevoUsuario.setUsername(usuarioRequest.getRut().toString());
+                    nuevoUsuario.setPassword(passwordEncoder.encode(usuarioRequest.getPassword()));
+                    nuevoUsuario.setRoles(roles);
+                    nuevoUsuario.setPersona(persona);
+                    nuevoUsuario.setEnabled(true);
+
+                    nuevoUsuario = usuarioRepository.save(nuevoUsuario);
+                    return new UsuarioResponse(nuevoUsuario.getUsername());
+                });
+    }
+
+    private List<Rol> getRolesForUserRequest(UsuarioRequest usuarioRequest) {
         List<Rol> roles = new ArrayList<>();
         rolRepository.findByName("ROLE_USER").ifPresent(roles::add);
-
-        if (usuarioRequest.isAdmin()) {
+        if (usuarioRequest.isAdmin())
             rolRepository.findByName("ROLE_ADMIN").ifPresent(roles::add);
-        }
-
-        if (usuarioRequest.isFunc()) {
+        if (usuarioRequest.isFunc())
             rolRepository.findByName("ROLE_FUNC").ifPresent(roles::add);
-        }
+        return roles;
+    }
 
-        // Si el usuario ya existe, solo actualizar roles y devolver respuesta
-        if (usuario != null) {
-            usuario.getRoles().addAll(roles); // Agregar los nuevos roles
-            usuario.setRoles(new ArrayList<>(new HashSet<>(usuario.getRoles()))); // Evitar duplicados
-            usuarioRepository.save(usuario);
+    private void updateRoles(Usuario usuario, List<Rol> newRoles) {
+        Set<Rol> uniqueRoles = new HashSet<>(usuario.getRoles());
+        uniqueRoles.addAll(newRoles);
+        usuario.setRoles(new ArrayList<>(uniqueRoles));
+        usuarioRepository.save(usuario);
+    }
 
-            UsuarioResponse usuarioResponse = new UsuarioResponse();
-            usuarioResponse.setUsername(usuario.getUsername());
-            return usuarioResponse;
-        }
+    private Persona getOrCreatePersonaFromApi(UsuarioRequest usuarioRequest) {
+        PersonaResponse personaResponse = apiService.getPersonaInfo(usuarioRequest.getRut());
 
-        // Buscar persona en la API
-        PersonaResponse personaResponse = apiService.obtenerDatos(usuarioRequest.getRut());
+        Optional<PersonaResponse> optionalPersonaResponse = Optional.ofNullable(personaResponse);
+
         Persona persona = personaRepository.findByRut(usuarioRequest.getRut()).orElse(null);
 
-        if (personaResponse == null) {
-            // Si la persona NO existe en la BD local, crearla
-            if (persona == null) {
-                PersonaRequest personaRequest = new PersonaRequest();
-                personaRequest.setRut(usuarioRequest.getRut());
-                personaRequest.setVrut(usuarioRequest.getVrut());
-                personaRequest.setNombres(usuarioRequest.getNombres());
-                personaRequest.setPaterno(usuarioRequest.getPaterno());
-                personaRequest.setMaterno(usuarioRequest.getMaterno());
-                personaRequest.setEmail(usuarioRequest.getEmail());
+        if (optionalPersonaResponse.isEmpty() && persona == null) {
+            PersonaRequest personaRequest = new PersonaRequest();
+            personaRequest.setRut(usuarioRequest.getRut());
+            personaRequest.setVrut(usuarioRequest.getVrut());
+            personaRequest.setNombres(usuarioRequest.getNombres());
+            personaRequest.setPaterno(usuarioRequest.getPaterno());
+            personaRequest.setMaterno(usuarioRequest.getMaterno());
+            personaRequest.setEmail(usuarioRequest.getEmail());
 
-                apiService.crearPersona(personaRequest); // Se crea en la API
+            apiService.createPersona(personaRequest);
 
-                // También la guardamos en la BD local
-                persona = new Persona();
-                persona.setRut(usuarioRequest.getRut());
-                persona = personaRepository.save(persona);
-            }
-        } else {
-            // Si la API sí devuelve datos y la persona no está en la BD, guardarla en la BD
-            if (persona == null) {
-                persona = new Persona();
-                persona.setRut(usuarioRequest.getRut());
-                persona = personaRepository.save(persona);
-            }
+            persona = new Persona();
+            persona.setRut(usuarioRequest.getRut());
+            persona = personaRepository.save(persona);
         }
 
-        // Crear nuevo usuario con la persona encontrada o creada
-        usuario = new Usuario();
-        usuario.setUsername(usuarioRequest.getRut().toString());
-        usuario.setPassword(passwordEncoder.encode(usuarioRequest.getPassword()));
-        usuario.setRoles(roles);
-        usuario.setPersona(persona);
-        usuario.setEnabled(true);
+        if (optionalPersonaResponse.isPresent() && persona == null) {
+            persona = new Persona();
+            persona.setRut(usuarioRequest.getRut());
+            persona = personaRepository.save(persona);
+        }
 
-        usuario = usuarioRepository.save(usuario);
-
-        // Respuesta
-        UsuarioResponse usuarioResponse = new UsuarioResponse();
-        usuarioResponse.setUsername(usuario.getUsername());
-
-        return usuarioResponse;
+        return persona;
     }
 
     @Override
-    public UsuarioResponse buscarUsuario(String username) {
+    public UsuarioResponse getUsuario(String username) {
 
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("No existe el usuario"));

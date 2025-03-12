@@ -22,7 +22,7 @@ public class ActivationController {
     }
 
     @GetMapping("/activate")
-    public String activateAccount(@RequestParam("token") String token) {
+    public String activateAccount(@RequestParam String token) {
         Usuario usuario = usuarioRepository.findByActivationToken(token)
             .orElseThrow(() -> new IllegalArgumentException("Token inválido"));
 
