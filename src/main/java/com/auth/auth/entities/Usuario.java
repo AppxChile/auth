@@ -23,7 +23,6 @@ public class Usuario {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
-
     @JsonIgnoreProperties({ "usuarios", "handler", "hibernateLazyInitializer" })
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "usuarios_roles", joinColumns = @JoinColumn(name = "usuario_id"), inverseJoinColumns = @JoinColumn(name = "rol_id"), uniqueConstraints = {
@@ -56,7 +55,6 @@ public class Usuario {
         this.username = username;
         this.password = password;
     }
-
 
     public Long getId() {
         return id;
@@ -125,7 +123,6 @@ public class Usuario {
     public void setPersona(Persona persona) {
         this.persona = persona;
     }
-
 
     public boolean isFunc() {
         return func;

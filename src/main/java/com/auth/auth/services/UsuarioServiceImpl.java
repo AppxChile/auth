@@ -7,12 +7,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.auth.auth.api.PersonaRequest;
 import com.auth.auth.api.PersonaResponse;
+import com.auth.auth.configuration.ApiProperties;
 import com.auth.auth.dto.ChangeMailRequest;
 import com.auth.auth.dto.UsuarioRequest;
 import com.auth.auth.dto.UsuarioResponse;
@@ -36,19 +36,19 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final ApiService apiService;
 
     private final PersonaRepository personaRepository;
+    private final ApiProperties apiProperties;
 
-    private final String urlActivation;
 
     public UsuarioServiceImpl(UsuarioRepository usuarioRepository, RolRepository rolRepository,
             PasswordEncoder passwordEncoder,
             ApiService apiService, PersonaRepository personaRepository,
-            @Value("${api.activation.url}") String urlActivation) {
+            ApiProperties apiProperties) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
         this.apiService = apiService;
         this.personaRepository = personaRepository;
-        this.urlActivation = urlActivation;
+        this.apiProperties = apiProperties;
 
     }
 
@@ -92,7 +92,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     private void sendMailActivation(Usuario usuario, PersonaResponse personaResponse) {
-        String activationLink = urlActivation + usuario.getActivationToken();
+        String activationLink = apiProperties.getActivationUrl() + usuario.getActivationToken();
         Map<String, Object> variables = Map.of("nombre", personaResponse.getNombres(), "link", activationLink);
 
         try {
@@ -118,7 +118,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         usuarioRepository.save(usuario);
 
-        String activationLink = urlActivation + usuario.getActivationToken();
+        String activationLink = apiProperties.getActivationUrl() + usuario.getActivationToken();
 
         Map<String, Object> variables = Map.of(
                 "nombre", usuario.getUsername(),

@@ -3,11 +3,11 @@ package com.auth.auth.services;
 import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.auth.auth.api.PersonaResponse;
+import com.auth.auth.configuration.ApiProperties;
 import com.auth.auth.entities.PasswordResetToken;
 import com.auth.auth.entities.Persona;
 import com.auth.auth.entities.Usuario;
@@ -26,7 +26,7 @@ public class PasswordRecoveryService {
     private final PasswordResetTokenRepository tokenRepository;
     private final PersonaRepository personaRepository;
     private final ApiService apiService;
-    private final String urlRecovery;
+    private final ApiProperties apiProperties;
 
     public PasswordRecoveryService(UsuarioRepository usuarioRepository,
             PasswordEncoder passwordEncoder,
@@ -34,13 +34,13 @@ public class PasswordRecoveryService {
             PasswordResetTokenRepository tokenRepository,
             PersonaRepository personaRepository,
             ApiService apiService,
-            @Value("${api.recovery.url}") String urlRecovery) {
+            ApiProperties apiProperties) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenRepository = tokenRepository;
         this.personaRepository = personaRepository;
         this.apiService = apiService;
-        this.urlRecovery = urlRecovery;
+        this.apiProperties = apiProperties;
     }
 
     public void sendRecoveryEmail(Integer rut) {
@@ -60,7 +60,7 @@ public class PasswordRecoveryService {
         tokenRepository.save(passwordResetToken);
 
         // Crear un enlace de recuperación
-        String recoveryLink = urlRecovery + token;
+        String recoveryLink = apiProperties.getRecoveryUrl() + token;
 
         PersonaResponse personaResponse = apiService.getPersonaInfo(rut);
 

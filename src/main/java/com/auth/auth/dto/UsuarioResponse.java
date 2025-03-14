@@ -5,25 +5,17 @@ public class UsuarioResponse {
     private String username;
     private String activationToken;
 
-    
-
     public UsuarioResponse() {
     }
-
-    
 
     public UsuarioResponse(String username) {
         this.username = username;
     }
 
-
-
     public UsuarioResponse(String username, String activationToken) {
         this.username = username;
         this.activationToken = activationToken;
     }
-
-
 
     public String getUsername() {
         return username;

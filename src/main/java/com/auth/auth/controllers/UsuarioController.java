@@ -19,7 +19,7 @@ import com.auth.auth.services.UsuarioService;
 
 @RestController
 @RequestMapping("/api/auth/usuarios")
-@CrossOrigin(origins = {"https://dev.appx.cl/", "http//localhost:5173"})
+@CrossOrigin(origins = { "https://dev.appx.cl/", "http//localhost:5173" })
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
@@ -62,12 +62,11 @@ public class UsuarioController {
     }
 
     @GetMapping("/buscar/{username}")
-    public ResponseEntity<Object> getUsuario(@PathVariable String username){
+    public ResponseEntity<Object> getUsuario(@PathVariable String username) {
         try {
             UsuarioResponse usuarioResponse = usuarioService.getUsuario(username);
             return ResponseEntity.ok().body(usuarioResponse);
 
-            
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
         }
