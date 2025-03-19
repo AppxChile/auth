@@ -11,6 +11,9 @@ public class UsuarioRequest {
     private String email;
     private boolean admin;
     private boolean func;
+    private Long idDepto;
+
+    
 
     public Integer getRut() {
         return rut;
@@ -82,6 +85,14 @@ public class UsuarioRequest {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public Long getIdDepto() {
+        return idDepto;
+    }
+
+    public void setIdDepto(Long idDepto) {
+        this.idDepto = idDepto;
     }
 
 }

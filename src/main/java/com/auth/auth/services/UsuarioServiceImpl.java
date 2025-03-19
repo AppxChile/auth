@@ -16,12 +16,17 @@ import com.auth.auth.configuration.ApiProperties;
 import com.auth.auth.dto.ChangeMailRequest;
 import com.auth.auth.dto.UsuarioRequest;
 import com.auth.auth.dto.UsuarioResponse;
+import com.auth.auth.dto.UsuarioResponseList;
+import com.auth.auth.entities.Departamento;
 import com.auth.auth.entities.Persona;
 import com.auth.auth.entities.Rol;
 import com.auth.auth.entities.Usuario;
+import com.auth.auth.entities.UsuarioDepartamentos;
 import com.auth.auth.exceptions.SendMailExceptions;
+import com.auth.auth.repositories.DepartamentoRepository;
 import com.auth.auth.repositories.PersonaRepository;
 import com.auth.auth.repositories.RolRepository;
+import com.auth.auth.repositories.UsuarioDepartamentosRepository;
 import com.auth.auth.repositories.UsuarioRepository;
 
 @Service
@@ -29,32 +34,72 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
 
+    private final DepartamentoRepository departamentoRepository;
+
+    private final UsuarioDepartamentosRepository usuarioDepartamentosRepository;
+
     private final RolRepository rolRepository;
 
     private final PasswordEncoder passwordEncoder;
 
     private final ApiService apiService;
 
+    private final PersonaService personaService;
+
     private final PersonaRepository personaRepository;
     private final ApiProperties apiProperties;
-
 
     public UsuarioServiceImpl(UsuarioRepository usuarioRepository, RolRepository rolRepository,
             PasswordEncoder passwordEncoder,
             ApiService apiService, PersonaRepository personaRepository,
-            ApiProperties apiProperties) {
+            ApiProperties apiProperties,
+            DepartamentoRepository departamentoRepository,
+            UsuarioDepartamentosRepository usuarioDepartamentosRepository,
+            PersonaService personaService) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
         this.apiService = apiService;
         this.personaRepository = personaRepository;
         this.apiProperties = apiProperties;
+        this.departamentoRepository = departamentoRepository;
+        this.usuarioDepartamentosRepository = usuarioDepartamentosRepository;
+        this.personaService = personaService;
 
     }
 
     @Override
-    public List<Usuario> findAll() {
-        return usuarioRepository.findAll();
+    public List<UsuarioResponseList> findAll() {
+
+       List<Usuario> response = usuarioRepository.findAll();
+
+        return response.stream()
+                      .map(res ->{
+
+                        UsuarioResponseList dto = new UsuarioResponseList();
+
+                        PersonaResponse personaResponse = personaService.getPersonaa(Integer.parseInt(res.getUsername()));
+
+                        UsuarioDepartamentos usuarioDepartamentos = usuarioDepartamentosRepository.findByUsuario(res).orElse(null);
+
+                        String nombre = personaResponse.getNombres() + " ";
+                        String paterno = personaResponse.getPaterno()+ " ";
+                        String materno = personaResponse.getMaterno();
+
+
+                        dto.setUsername(res.getUsername());
+                        dto.setNombre(nombre.concat(paterno).concat(materno));
+                        dto.setRut(personaResponse.getRut());
+                        dto.setVrut(personaResponse.getVrut());
+                        dto.setDepartamento(usuarioDepartamentos != null ? usuarioDepartamentos.getDepartamento().getNombreDepto() : null);
+
+
+                        
+
+                        return dto;
+
+                      }).filter(dto ->  dto.getDepartamento() != null)
+                      .toList();
     }
 
     @Override
@@ -138,6 +183,9 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         List<Rol> roles = getRolesForUserRequest(usuarioRequest);
 
+        Departamento depto = departamentoRepository.findById(usuarioRequest.getIdDepto())
+                .orElseThrow(() -> new IllegalArgumentException("El codigo de departamento no existe"));
+
         return usuarioRepository.findByUsername(usuarioRequest.getRut().toString())
                 .map(usuarioExistente -> {
                     updateRoles(usuarioExistente, roles);
@@ -154,6 +202,11 @@ public class UsuarioServiceImpl implements UsuarioService {
                     nuevoUsuario.setEnabled(true);
 
                     nuevoUsuario = usuarioRepository.save(nuevoUsuario);
+
+                    UsuarioDepartamentos usuarioDepartamentos = new UsuarioDepartamentos(nuevoUsuario, depto);
+
+                    usuarioDepartamentosRepository.save(usuarioDepartamentos);
+
                     return new UsuarioResponse(nuevoUsuario.getUsername());
                 });
     }

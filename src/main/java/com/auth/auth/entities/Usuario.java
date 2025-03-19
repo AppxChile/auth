@@ -48,6 +48,9 @@ public class Usuario {
     @Column(unique = true)
     private String activationToken;
 
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL)
+    private List<UsuarioDepartamentos> usuarioDepartamentos;
+
     public Usuario() {
     }
 

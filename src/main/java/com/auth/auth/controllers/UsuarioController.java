@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.auth.auth.dto.UsuarioRequest;
 import com.auth.auth.dto.UsuarioResponse;
+import com.auth.auth.dto.UsuarioResponseList;
 import com.auth.auth.entities.Usuario;
 import com.auth.auth.services.UsuarioService;
 
@@ -29,8 +30,14 @@ public class UsuarioController {
     }
 
     @GetMapping("/list")
-    public List<Usuario> list() {
-        return usuarioService.findAll();
+    public ResponseEntity<Object> getList() {
+       try {
+
+        List<UsuarioResponseList> usuariosList = usuarioService.findAll();
+        return ResponseEntity.ok(usuariosList);
+       } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+       }
     }
 
     @PostMapping("/create")
