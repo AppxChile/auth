@@ -3,6 +3,7 @@ package com.auth.auth.entities;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,7 +17,8 @@ public class Departamento {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String nombreDepto;
+    @Column(name = "nombre_depto")
+    private String nombreDepartamento;
 
     @OneToMany(mappedBy = "departamento", cascade = CascadeType.ALL)
     private List<UsuarioDepartamentos> usuarioDepartamentos;
@@ -29,12 +31,12 @@ public class Departamento {
         this.id = id;
     }
 
-    public String getNombreDepto() {
-        return nombreDepto;
+    public String getNombreDepartamento() {
+        return nombreDepartamento;
     }
 
-    public void setNombreDepto(String nombreDepto) {
-        this.nombreDepto = nombreDepto;
+    public void setNombreDepartamento(String nombreDepto) {
+        this.nombreDepartamento = nombreDepto;
     }
 
 }

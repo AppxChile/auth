@@ -91,7 +91,7 @@ public class UsuarioServiceImpl implements UsuarioService {
                         dto.setNombre(nombre.concat(paterno).concat(materno));
                         dto.setRut(personaResponse.getRut());
                         dto.setVrut(personaResponse.getVrut());
-                        dto.setDepartamento(usuarioDepartamentos != null ? usuarioDepartamentos.getDepartamento().getNombreDepto() : null);
+                        dto.setDepartamento(usuarioDepartamentos != null ? usuarioDepartamentos.getDepartamento().getNombreDepartamento() : null);
 
 
                         
