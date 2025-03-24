@@ -21,4 +21,9 @@ public class DepartamentoService {
         return departamentoRepository.findAll();
     }
 
+    public Departamento findBydId(Long id) {
+        return departamentoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("No se econtro el departamento"));
+    }
+
 }
