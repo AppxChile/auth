@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -23,24 +24,26 @@ import com.auth.auth.entities.Rol;
 import com.auth.auth.entities.Usuario;
 import com.auth.auth.entities.UsuarioDepartamentos;
 import com.auth.auth.exceptions.SendMailExceptions;
-import com.auth.auth.repositories.DepartamentoRepository;
-import com.auth.auth.repositories.PersonaRepository;
-import com.auth.auth.repositories.RolRepository;
-import com.auth.auth.repositories.UsuarioDepartamentosRepository;
 import com.auth.auth.repositories.UsuarioRepository;
 import com.auth.auth.services.interfaces.ApiServiceMail;
 import com.auth.auth.services.interfaces.ApiServicePersona;
+import com.auth.auth.services.interfaces.DepartamentoService;
+import com.auth.auth.services.interfaces.PersonaService;
+import com.auth.auth.services.interfaces.RolService;
+import com.auth.auth.services.interfaces.UsuarioDepartamentosService;
 
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
 
+    private final UsuarioDepartamentosService usuarioDepartamentosService;
+
     private final UsuarioRepository usuarioRepository;
 
-    private final DepartamentoRepository departamentoRepository;
+    private final DepartamentoService departamentoService;
 
-    private final UsuarioDepartamentosRepository usuarioDepartamentosRepository;
+    private final PersonaService personaService;
 
-    private final RolRepository rolRepository;
+    private final RolService rolService;
 
     private final PasswordEncoder passwordEncoder;
 
@@ -48,26 +51,26 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     private final ApiServiceMail apiServiceMail;
 
-    private final PersonaRepository personaRepository;
     private final ApiProperties apiProperties;
 
-    public UsuarioServiceImpl(UsuarioRepository usuarioRepository, RolRepository rolRepository,
+    public UsuarioServiceImpl(UsuarioRepository usuarioRepository,
             PasswordEncoder passwordEncoder,
-            PersonaRepository personaRepository,
             ApiProperties apiProperties,
-            DepartamentoRepository departamentoRepository,
-            UsuarioDepartamentosRepository usuarioDepartamentosRepository,
             ApiServicePersona apiServicePersona,
-            ApiServiceMail apiServiceMail) {
+            ApiServiceMail apiServiceMail,
+            UsuarioDepartamentosService usuarioDepartamentosService,
+            DepartamentoService departamentoService,
+            RolService rolService,
+            PersonaService personaService) {
         this.usuarioRepository = usuarioRepository;
-        this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
-        this.personaRepository = personaRepository;
         this.apiProperties = apiProperties;
-        this.departamentoRepository = departamentoRepository;
-        this.usuarioDepartamentosRepository = usuarioDepartamentosRepository;
         this.apiServicePersona = apiServicePersona;
         this.apiServiceMail = apiServiceMail;
+        this.usuarioDepartamentosService = usuarioDepartamentosService;
+        this.departamentoService = departamentoService;
+        this.rolService = rolService;
+        this.personaService=personaService;
 
     }
 
@@ -84,8 +87,7 @@ public class UsuarioServiceImpl implements UsuarioService {
                     PersonaResponse personaResponse = apiServicePersona
                             .getPersonaInfo(Integer.parseInt(res.getUsername()));
 
-                    UsuarioDepartamentos usuarioDepartamentos = usuarioDepartamentosRepository.findByUsuario(res)
-                            .orElse(null);
+                    UsuarioDepartamentos usuarioDepartamentos = usuarioDepartamentosService.findByUsuario(res);
 
                     String nombre = personaResponse.getNombres() + " ";
                     String paterno = personaResponse.getPaterno() + " ";
@@ -115,8 +117,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         int rut = Integer.parseInt(usuario.getUsername());
 
-        Persona persona = personaRepository.findByRut(rut)
-                .orElseGet(() -> personaRepository.save(new Persona(rut)));
+        Persona persona = personaService.getPersonaByRut(rut);
+                
 
         PersonaResponse personaResponse = apiServicePersona.getPersonaInfo(persona.getRut());
         usuario.setPersona(persona);
@@ -131,11 +133,11 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     private List<Rol> getRolesForUser(Usuario usuario) {
         List<Rol> roles = new ArrayList<>();
-        rolRepository.findByName("ROLE_USER").ifPresent(roles::add);
+        rolService.getByName("ROLE_USER").ifPresent(roles::add);
         if (usuario.isAdmin())
-            rolRepository.findByName("ROLE_ADMIN").ifPresent(roles::add);
+            rolService.getByName("ROLE_ADMIN").ifPresent(roles::add);
         if (usuario.isFunc())
-            rolRepository.findByName("ROLE_FUNC").ifPresent(roles::add);
+            rolService.getByName("ROLE_FUNC").ifPresent(roles::add);
         return roles;
     }
 
@@ -156,8 +158,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         Integer rut = request.getRut();
         String email = request.getEmail();
 
-        Persona persona = personaRepository.findByRut(rut)
-                .orElseThrow(() -> new IllegalArgumentException("Persona no encontrada"));
+        Persona persona = personaService.getPersonaByRut(rut);
 
         Usuario usuario = usuarioRepository.findByPersona(persona).orElseThrow();
 
@@ -186,8 +187,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         List<Rol> roles = getRolesForUserRequest(usuarioRequest);
 
-        Departamento depto = departamentoRepository.findById(usuarioRequest.getIdDepto())
-                .orElseThrow(() -> new IllegalArgumentException("El codigo de departamento no existe"));
+        Departamento depto = departamentoService.getById(usuarioRequest.getIdDepto());
 
         return usuarioRepository.findByUsername(usuarioRequest.getRut().toString())
                 .map(usuarioExistente -> {
@@ -208,7 +208,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
                     UsuarioDepartamentos usuarioDepartamentos = new UsuarioDepartamentos(nuevoUsuario, depto);
 
-                    usuarioDepartamentosRepository.save(usuarioDepartamentos);
+                    usuarioDepartamentosService.save(usuarioDepartamentos);
 
                     return new UsuarioResponse(nuevoUsuario.getUsername());
                 });
@@ -216,11 +216,11 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     private List<Rol> getRolesForUserRequest(UsuarioRequest usuarioRequest) {
         List<Rol> roles = new ArrayList<>();
-        rolRepository.findByName("ROLE_USER").ifPresent(roles::add);
+        rolService.getByName("ROLE_USER").ifPresent(roles::add);
         if (usuarioRequest.isAdmin())
-            rolRepository.findByName("ROLE_ADMIN").ifPresent(roles::add);
+            rolService.getByName("ROLE_ADMIN").ifPresent(roles::add);
         if (usuarioRequest.isFunc())
-            rolRepository.findByName("ROLE_FUNC").ifPresent(roles::add);
+            rolService.getByName("ROLE_FUNC").ifPresent(roles::add);
         return roles;
     }
 
@@ -236,7 +236,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         Optional<PersonaResponse> optionalPersonaResponse = Optional.ofNullable(personaResponse);
 
-        Persona persona = personaRepository.findByRut(usuarioRequest.getRut()).orElse(null);
+        Persona persona = personaService.getPersonaByRut(usuarioRequest.getRut());
 
         if (optionalPersonaResponse.isEmpty() && persona == null) {
             PersonaRequest personaRequest = new PersonaRequest();
@@ -251,13 +251,13 @@ public class UsuarioServiceImpl implements UsuarioService {
 
             persona = new Persona();
             persona.setRut(usuarioRequest.getRut());
-            persona = personaRepository.save(persona);
+            persona = personaService.save(persona);
         }
 
         if (optionalPersonaResponse.isPresent() && persona == null) {
             persona = new Persona();
             persona.setRut(usuarioRequest.getRut());
-            persona = personaRepository.save(persona);
+            persona = personaService.save(persona);
         }
 
         return persona;
@@ -286,6 +286,14 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public Usuario save(Usuario usuario) {
         return usuarioRepository.save(usuario);
+    }
+
+    @Override
+    public Usuario findByUsername(String username) {
+
+        return usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        String.format("El usuario %s no ha sido encontrado", username)));
     }
 
 }

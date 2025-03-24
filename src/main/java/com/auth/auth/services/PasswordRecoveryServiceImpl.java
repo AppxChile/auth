@@ -9,14 +9,12 @@ import org.springframework.stereotype.Service;
 import com.auth.auth.api.PersonaResponse;
 import com.auth.auth.configuration.ApiProperties;
 import com.auth.auth.entities.PasswordResetToken;
-import com.auth.auth.entities.Persona;
 import com.auth.auth.entities.Usuario;
 import com.auth.auth.exceptions.SendMailExceptions;
 import com.auth.auth.services.interfaces.ApiServiceMail;
 import com.auth.auth.services.interfaces.ApiServicePersona;
 import com.auth.auth.services.interfaces.PasswordRecoveryService;
 import com.auth.auth.services.interfaces.PasswordResetTokenService;
-import com.auth.auth.services.interfaces.PersonaService;
 
 @Service
 public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
@@ -25,7 +23,6 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
     private final ApiServiceMail apiServiceMail;
     private final ApiServicePersona apiService;
     private final ApiProperties apiProperties;
-    private final PersonaService personaService;
     private final UsuarioService usuarioService;
     private final PasswordResetTokenService passwordResetTokenService;
 
@@ -35,23 +32,20 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
             ApiServiceMail apiServiceMail,
             ApiServicePersona apiService,
             ApiProperties apiProperties,
-            PersonaService personaService,
             UsuarioService usuarioService) {
         this.passwordEncoder = passwordEncoder;
         this.apiServiceMail = apiServiceMail;
         this.apiProperties = apiProperties;
         this.apiService = apiService;
-        this.personaService = personaService;
-        this.usuarioService=usuarioService;
-        this.passwordResetTokenService=passwordResetTokenService;
+        this.usuarioService = usuarioService;
+        this.passwordResetTokenService = passwordResetTokenService;
     }
 
     @Override
     public void sendRecoveryEmail(Integer rut) {
-        Persona persona = personaService.getPersonaByRut(rut);
 
         // Buscar al usuario por RUT
-        Usuario usuario = usuarioService.getUsuarioByPersona(persona);
+        Usuario usuario = usuarioService.findByUsername(rut.toString());
 
         // Generar un token único y temporal
         String token = UUID.randomUUID().toString();
@@ -81,7 +75,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
     public void resetPassword(String token, String newPassword) {
 
         PasswordResetToken passwordResetToken = passwordResetTokenService.getByToken(token);
-              
+
         if (passwordResetToken.isExpired()) {
             throw new IllegalArgumentException("El token ha expirado");
         }

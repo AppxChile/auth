@@ -10,12 +10,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.auth.auth.services.interfaces.PasswordRecoveryService;
 
-
-
-
 @RestController
 @RequestMapping("/api/auth/usuarios")
-@CrossOrigin(origins = {"https://dev.appx.cl/", "http//localhost:5173"})
+@CrossOrigin(origins = { "https://dev.appx.cl/", "http//localhost:5173" })
 public class PasswordController {
 
     private final PasswordRecoveryService passwordRecoveryService;
@@ -37,27 +34,22 @@ public class PasswordController {
     @PostMapping("/reset")
     public ResponseEntity<Object> resetPassword(@RequestParam String token, @RequestBody String newPassword) {
         try {
-            // Verificar si el token es válido
             if (token == null || token.isEmpty()) {
                 return ResponseEntity.badRequest().body("El token es obligatorio.");
             }
-    
-            // Verificar si la contraseña es válida
+
             if (newPassword == null || newPassword.isEmpty()) {
                 return ResponseEntity.badRequest().body("La nueva contraseña es obligatoria.");
             }
-    
-            // Intentar restablecer la contraseña
+
             passwordRecoveryService.resetPassword(token, newPassword);
-    
+
             return ResponseEntity.ok("Contraseña actualizada exitosamente.");
         } catch (IllegalArgumentException e) {
-            // Si el servicio lanza una excepción por token inválido
             return ResponseEntity.status(400).body("El token proporcionado no es válido.");
         } catch (Exception e) {
-            // Captura cualquier otro error inesperado
             return ResponseEntity.status(500).body("Error interno del servidor. Por favor, intente más tarde.");
         }
     }
-    
+
 }

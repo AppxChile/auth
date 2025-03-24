@@ -8,4 +8,6 @@ public interface DepartamentoService {
 
      List<Departamento> getAll();
 
+     Departamento getById(Long id);
+
 }

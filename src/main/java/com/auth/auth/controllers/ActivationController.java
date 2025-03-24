@@ -26,7 +26,7 @@ public class ActivationController {
                 .orElseThrow(() -> new IllegalArgumentException("Token inválido"));
 
         usuario.setEnabled(true);
-        usuario.setActivationToken(null); // Elimina el token tras activación
+        usuario.setActivationToken(null);
         usuarioRepository.save(usuario);
 
         return "¡Cuenta activada correctamente!";

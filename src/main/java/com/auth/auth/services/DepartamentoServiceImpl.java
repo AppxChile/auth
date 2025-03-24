@@ -23,4 +23,10 @@ public class DepartamentoServiceImpl implements DepartamentoService {
         return departamentoRepository.findAll();
     }
 
+    @Override
+    public Departamento getById(Long id) {
+        return departamentoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("El codigo de departamento no existe"));
+    }
+
 }

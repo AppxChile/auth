@@ -48,14 +48,12 @@ public class ApiServicePersonaImpl implements ApiServicePersona {
     @Override
     public PersonaResponse getPersonaInfo(Integer rut) {
         return webClientPersona.get()
-        .uri("/{rut}", rut)
-        .retrieve()
-        .onStatus(HttpStatusCode::is4xxClientError, response -> Mono.empty())
-        .bodyToMono(PersonaResponse.class)
-        .onErrorResume(Exception.class, e -> Mono.empty())
-        .block();
+                .uri("/{rut}", rut)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, response -> Mono.empty())
+                .bodyToMono(PersonaResponse.class)
+                .onErrorResume(Exception.class, e -> Mono.empty())
+                .block();
     }
-
-
 
 }

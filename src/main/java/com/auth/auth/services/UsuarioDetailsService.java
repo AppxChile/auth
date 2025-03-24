@@ -12,23 +12,19 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.auth.auth.entities.Usuario;
-import com.auth.auth.repositories.UsuarioRepository;
-
 
 @Service
 public class UsuarioDetailsService implements UserDetailsService {
 
-    private final UsuarioRepository usuarioRepository;
+    private final UsuarioService usuarioService;
 
-    public UsuarioDetailsService(UsuarioRepository usuarioRepository) {
-        this.usuarioRepository = usuarioRepository;
+    public UsuarioDetailsService(UsuarioService usuarioService) {
+        this.usuarioService = usuarioService;
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Usuario usuario = usuarioRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException(
-                        String.format("El usuario %s no ha sido encontrado", username)));
+        Usuario usuario = usuarioService.findByUsername(username);
 
         List<GrantedAuthority> authorities = usuario.getRoles()
                 .stream()

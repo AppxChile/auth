@@ -31,13 +31,13 @@ public class UsuarioController {
 
     @GetMapping("/list")
     public ResponseEntity<Object> getList() {
-       try {
+        try {
 
-        List<UsuarioResponseList> usuariosList = usuarioService.findAll();
-        return ResponseEntity.ok(usuariosList);
-       } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-       }
+            List<UsuarioResponseList> usuariosList = usuarioService.findAll();
+            return ResponseEntity.ok(usuariosList);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
     @PostMapping("/create")
@@ -49,7 +49,7 @@ public class UsuarioController {
 
         } catch (Exception e) {
 
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
 
     }

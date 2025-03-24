@@ -18,7 +18,12 @@ public class PersonaServiceImpl implements PersonaService {
     @Override
     public Persona getPersonaByRut(Integer rut) {
         return personaRepository.findByRut(rut)
-                .orElseThrow(() -> new IllegalArgumentException("Persona no encontrada" + rut));
+                .orElse(personaRepository.save(new Persona(rut)));
+    }
+
+    @Override
+    public Persona save(Persona persona) {
+        return personaRepository.save(persona);
     }
 
 }

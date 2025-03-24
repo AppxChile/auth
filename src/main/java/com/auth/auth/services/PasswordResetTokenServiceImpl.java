@@ -31,7 +31,6 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
     public void delete(PasswordResetToken passwordResetToken) {
         passwordResetTokenRepository.delete(passwordResetToken);
 
-    
     }
 
 }

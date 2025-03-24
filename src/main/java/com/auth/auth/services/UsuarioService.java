@@ -25,6 +25,6 @@ public interface UsuarioService {
 
   Usuario save(Usuario usuario);
 
-
+  Usuario findByUsername(String username);
 
 }
