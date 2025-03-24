@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.auth.auth.entities.Departamento;
-import com.auth.auth.services.DepartamentoService;
+import com.auth.auth.services.interfaces.DepartamentoService;
 
 @RestController
 @RequestMapping("/api/auth/usuarios/departamentos")

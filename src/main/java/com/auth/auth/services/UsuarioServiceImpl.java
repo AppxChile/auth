@@ -28,6 +28,8 @@ import com.auth.auth.repositories.PersonaRepository;
 import com.auth.auth.repositories.RolRepository;
 import com.auth.auth.repositories.UsuarioDepartamentosRepository;
 import com.auth.auth.repositories.UsuarioRepository;
+import com.auth.auth.services.interfaces.ApiServiceMail;
+import com.auth.auth.services.interfaces.ApiServicePersona;
 
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
@@ -42,68 +44,69 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     private final PasswordEncoder passwordEncoder;
 
-    private final ApiService apiService;
+    private final ApiServicePersona apiServicePersona;
 
-    private final PersonaService personaService;
+    private final ApiServiceMail apiServiceMail;
 
     private final PersonaRepository personaRepository;
     private final ApiProperties apiProperties;
 
     public UsuarioServiceImpl(UsuarioRepository usuarioRepository, RolRepository rolRepository,
             PasswordEncoder passwordEncoder,
-            ApiService apiService, PersonaRepository personaRepository,
+            PersonaRepository personaRepository,
             ApiProperties apiProperties,
             DepartamentoRepository departamentoRepository,
             UsuarioDepartamentosRepository usuarioDepartamentosRepository,
-            PersonaService personaService) {
+            ApiServicePersona apiServicePersona,
+            ApiServiceMail apiServiceMail) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
-        this.apiService = apiService;
         this.personaRepository = personaRepository;
         this.apiProperties = apiProperties;
         this.departamentoRepository = departamentoRepository;
         this.usuarioDepartamentosRepository = usuarioDepartamentosRepository;
-        this.personaService = personaService;
+        this.apiServicePersona = apiServicePersona;
+        this.apiServiceMail = apiServiceMail;
 
     }
 
     @Override
     public List<UsuarioResponseList> findAll() {
 
-       List<Usuario> response = usuarioRepository.findAll();
+        List<Usuario> response = usuarioRepository.findAll();
 
         return response.stream()
-                      .map(res ->{
+                .map(res -> {
 
-                        UsuarioResponseList dto = new UsuarioResponseList();
+                    UsuarioResponseList dto = new UsuarioResponseList();
 
-                        PersonaResponse personaResponse = personaService.getPersonaa(Integer.parseInt(res.getUsername()));
+                    PersonaResponse personaResponse = apiServicePersona
+                            .getPersonaInfo(Integer.parseInt(res.getUsername()));
 
-                        UsuarioDepartamentos usuarioDepartamentos = usuarioDepartamentosRepository.findByUsuario(res).orElse(null);
+                    UsuarioDepartamentos usuarioDepartamentos = usuarioDepartamentosRepository.findByUsuario(res)
+                            .orElse(null);
 
-                        String nombre = personaResponse.getNombres() + " ";
-                        String paterno = personaResponse.getPaterno()+ " ";
-                        String materno = personaResponse.getMaterno();
+                    String nombre = personaResponse.getNombres() + " ";
+                    String paterno = personaResponse.getPaterno() + " ";
+                    String materno = personaResponse.getMaterno();
 
+                    dto.setUsername(res.getUsername());
+                    dto.setNombre(nombre.concat(paterno).concat(materno));
+                    dto.setRut(personaResponse.getRut());
+                    dto.setVrut(personaResponse.getVrut());
+                    dto.setDepartamento(usuarioDepartamentos != null
+                            ? usuarioDepartamentos.getDepartamento().getNombreDepartamento()
+                            : null);
 
-                        dto.setUsername(res.getUsername());
-                        dto.setNombre(nombre.concat(paterno).concat(materno));
-                        dto.setRut(personaResponse.getRut());
-                        dto.setVrut(personaResponse.getVrut());
-                        dto.setDepartamento(usuarioDepartamentos != null ? usuarioDepartamentos.getDepartamento().getNombreDepartamento() : null);
+                    return dto;
 
-
-                        
-
-                        return dto;
-
-                      }).filter(dto ->  dto.getDepartamento() != null)
-                      .toList();
+                }).filter(dto -> dto.getDepartamento() != null)
+                .toList();
     }
 
     @Override
-    public UsuarioResponse save(Usuario usuario) {
+    public UsuarioResponse createUser(Usuario usuario) {
 
         usuario.setRoles(getRolesForUser(usuario));
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
@@ -115,7 +118,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         Persona persona = personaRepository.findByRut(rut)
                 .orElseGet(() -> personaRepository.save(new Persona(rut)));
 
-        PersonaResponse personaResponse = apiService.getPersonaInfo(persona.getRut());
+        PersonaResponse personaResponse = apiServicePersona.getPersonaInfo(persona.getRut());
         usuario.setPersona(persona);
 
         sendMailActivation(usuario, personaResponse);
@@ -141,7 +144,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         Map<String, Object> variables = Map.of("nombre", personaResponse.getNombres(), "link", activationLink);
 
         try {
-            apiService.sendEmail(personaResponse.getEmail(), "Activa tu registro", "register-template", variables);
+            apiServiceMail.sendEmail(personaResponse.getEmail(), "Activa tu registro", "register-template", variables);
         } catch (SendMailExceptions e) {
             throw new SendMailExceptions("Error enviando correo de activación a " + personaResponse.getEmail());
         }
@@ -170,7 +173,7 @@ public class UsuarioServiceImpl implements UsuarioService {
                 "codigo", activationLink);
 
         try {
-            apiService.sendEmail(email, "Correo con Thymeleaf", "email-template", variables);
+            apiServiceMail.sendEmail(email, "Correo con Thymeleaf", "email-template", variables);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -179,7 +182,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    public UsuarioResponse saveUserFunc(UsuarioRequest usuarioRequest) {
+    public UsuarioResponse createUserFunc(UsuarioRequest usuarioRequest) {
 
         List<Rol> roles = getRolesForUserRequest(usuarioRequest);
 
@@ -229,7 +232,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     private Persona getOrCreatePersonaFromApi(UsuarioRequest usuarioRequest) {
-        PersonaResponse personaResponse = apiService.getPersonaInfo(usuarioRequest.getRut());
+        PersonaResponse personaResponse = apiServicePersona.getPersonaInfo(usuarioRequest.getRut());
 
         Optional<PersonaResponse> optionalPersonaResponse = Optional.ofNullable(personaResponse);
 
@@ -244,7 +247,7 @@ public class UsuarioServiceImpl implements UsuarioService {
             personaRequest.setMaterno(usuarioRequest.getMaterno());
             personaRequest.setEmail(usuarioRequest.getEmail());
 
-            apiService.createPersona(personaRequest);
+            apiServicePersona.createPersona(personaRequest);
 
             persona = new Persona();
             persona.setRut(usuarioRequest.getRut());
@@ -270,6 +273,19 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuarioResponse.setUsername(usuario.getUsername());
 
         return usuarioResponse;
+    }
+
+    @Override
+    public Usuario getUsuarioByPersona(Persona persona) {
+
+        return usuarioRepository.findByPersona(persona)
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Usuario no encontrado para el RUT: " + persona.getRut()));
+    }
+
+    @Override
+    public Usuario save(Usuario usuario) {
+        return usuarioRepository.save(usuario);
     }
 
 }

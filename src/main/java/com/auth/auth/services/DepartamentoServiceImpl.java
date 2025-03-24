@@ -6,16 +6,18 @@ import org.springframework.stereotype.Service;
 
 import com.auth.auth.entities.Departamento;
 import com.auth.auth.repositories.DepartamentoRepository;
+import com.auth.auth.services.interfaces.DepartamentoService;
 
 @Service
-public class DepartamentoService {
+public class DepartamentoServiceImpl implements DepartamentoService {
 
     private final DepartamentoRepository departamentoRepository;
 
-    public DepartamentoService(DepartamentoRepository departamentoRepository) {
+    public DepartamentoServiceImpl(DepartamentoRepository departamentoRepository) {
         this.departamentoRepository = departamentoRepository;
     }
 
+    @Override
     public List<Departamento> getAll() {
 
         return departamentoRepository.findAll();

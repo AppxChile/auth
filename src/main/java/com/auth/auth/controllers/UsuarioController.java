@@ -44,7 +44,7 @@ public class UsuarioController {
     public ResponseEntity<Object> create(@RequestBody Usuario usuario) {
 
         try {
-            UsuarioResponse newUsuario = usuarioService.save(usuario);
+            UsuarioResponse newUsuario = usuarioService.createUser(usuario);
             return ResponseEntity.status(HttpStatus.CREATED).body(newUsuario);
 
         } catch (Exception e) {
@@ -58,7 +58,7 @@ public class UsuarioController {
     public ResponseEntity<Object> createFunc(@RequestBody UsuarioRequest usuario) {
 
         try {
-            UsuarioResponse newUsuario = usuarioService.saveUserFunc(usuario);
+            UsuarioResponse newUsuario = usuarioService.createUserFunc(usuario);
             return ResponseEntity.status(HttpStatus.CREATED).body(newUsuario);
 
         } catch (Exception e) {

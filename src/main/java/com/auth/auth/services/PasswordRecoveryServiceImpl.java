@@ -12,52 +12,53 @@ import com.auth.auth.entities.PasswordResetToken;
 import com.auth.auth.entities.Persona;
 import com.auth.auth.entities.Usuario;
 import com.auth.auth.exceptions.SendMailExceptions;
-import com.auth.auth.repositories.PasswordResetTokenRepository;
-import com.auth.auth.repositories.PersonaRepository;
-import com.auth.auth.repositories.UsuarioRepository;
-
-import jakarta.transaction.Transactional;
+import com.auth.auth.services.interfaces.ApiServiceMail;
+import com.auth.auth.services.interfaces.ApiServicePersona;
+import com.auth.auth.services.interfaces.PasswordRecoveryService;
+import com.auth.auth.services.interfaces.PasswordResetTokenService;
+import com.auth.auth.services.interfaces.PersonaService;
 
 @Service
-public class PasswordRecoveryService {
+public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
 
-    private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
-    private final PasswordResetTokenRepository tokenRepository;
-    private final PersonaRepository personaRepository;
-    private final ApiService apiService;
+    private final ApiServiceMail apiServiceMail;
+    private final ApiServicePersona apiService;
     private final ApiProperties apiProperties;
+    private final PersonaService personaService;
+    private final UsuarioService usuarioService;
+    private final PasswordResetTokenService passwordResetTokenService;
 
-    public PasswordRecoveryService(UsuarioRepository usuarioRepository,
+    public PasswordRecoveryServiceImpl(
             PasswordEncoder passwordEncoder,
-
-            PasswordResetTokenRepository tokenRepository,
-            PersonaRepository personaRepository,
-            ApiService apiService,
-            ApiProperties apiProperties) {
-        this.usuarioRepository = usuarioRepository;
+            PasswordResetTokenService passwordResetTokenService,
+            ApiServiceMail apiServiceMail,
+            ApiServicePersona apiService,
+            ApiProperties apiProperties,
+            PersonaService personaService,
+            UsuarioService usuarioService) {
         this.passwordEncoder = passwordEncoder;
-        this.tokenRepository = tokenRepository;
-        this.personaRepository = personaRepository;
-        this.apiService = apiService;
+        this.apiServiceMail = apiServiceMail;
         this.apiProperties = apiProperties;
+        this.apiService = apiService;
+        this.personaService = personaService;
+        this.usuarioService=usuarioService;
+        this.passwordResetTokenService=passwordResetTokenService;
     }
 
+    @Override
     public void sendRecoveryEmail(Integer rut) {
-
-        Persona persona = personaRepository.findByRut(rut)
-                .orElseThrow(() -> new IllegalArgumentException("Persona no encontrada" + rut));
+        Persona persona = personaService.getPersonaByRut(rut);
 
         // Buscar al usuario por RUT
-        Usuario usuario = usuarioRepository.findByPersona(persona)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado para el RUT: " + rut));
+        Usuario usuario = usuarioService.getUsuarioByPersona(persona);
 
         // Generar un token único y temporal
         String token = UUID.randomUUID().toString();
 
         // Guardar el token en la base de datos
         PasswordResetToken passwordResetToken = new PasswordResetToken(token, usuario);
-        tokenRepository.save(passwordResetToken);
+        passwordResetTokenService.save(passwordResetToken);
 
         // Crear un enlace de recuperación
         String recoveryLink = apiProperties.getRecoveryUrl() + token;
@@ -69,20 +70,18 @@ public class PasswordRecoveryService {
                 "recoveryLink", recoveryLink);
 
         try {
-            apiService.sendEmail(personaResponse.getEmail(), "Recuperacion de contraseña", "recovery-template",
+            apiServiceMail.sendEmail(personaResponse.getEmail(), "Recuperacion de contraseña", "recovery-template",
                     variables);
         } catch (SendMailExceptions e) {
             throw new SendMailExceptions("Error enviando correo de activación a " + personaResponse.getEmail());
         }
-
     }
 
-    @Transactional
+    @Override
     public void resetPassword(String token, String newPassword) {
 
-        PasswordResetToken passwordResetToken = tokenRepository.findByToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("Token inválido o expirado"));
-
+        PasswordResetToken passwordResetToken = passwordResetTokenService.getByToken(token);
+              
         if (passwordResetToken.isExpired()) {
             throw new IllegalArgumentException("El token ha expirado");
         }
@@ -91,9 +90,9 @@ public class PasswordRecoveryService {
 
         String encodedPassword = passwordEncoder.encode(newPassword);
         usuario.setPassword(encodedPassword);
-        usuarioRepository.save(usuario);
+        usuarioService.save(usuario);
 
-        tokenRepository.delete(passwordResetToken);
+        passwordResetTokenService.delete(passwordResetToken);
 
     }
 
