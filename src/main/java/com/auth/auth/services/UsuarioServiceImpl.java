@@ -70,7 +70,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         this.usuarioDepartamentosService = usuarioDepartamentosService;
         this.departamentoService = departamentoService;
         this.rolService = rolService;
-        this.personaService=personaService;
+        this.personaService = personaService;
 
     }
 
@@ -118,7 +118,6 @@ public class UsuarioServiceImpl implements UsuarioService {
         int rut = Integer.parseInt(usuario.getUsername());
 
         Persona persona = personaService.getPersonaByRut(rut);
-                
 
         PersonaResponse personaResponse = apiServicePersona.getPersonaInfo(persona.getRut());
         usuario.setPersona(persona);
@@ -269,8 +268,11 @@ public class UsuarioServiceImpl implements UsuarioService {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("No existe el usuario"));
 
+        UsuarioDepartamentos usuarioDepartamentos = usuarioDepartamentosService.findByUsuario(usuario);
+
         UsuarioResponse usuarioResponse = new UsuarioResponse();
         usuarioResponse.setUsername(usuario.getUsername());
+        usuarioResponse.setIdDepartamento(usuarioDepartamentos.getDepartamento().getId());
 
         return usuarioResponse;
     }

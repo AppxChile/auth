@@ -4,6 +4,7 @@ public class UsuarioResponse {
 
     private String username;
     private String activationToken;
+    private Long idDepartamento;
 
     public UsuarioResponse() {
     }
@@ -31,6 +32,14 @@ public class UsuarioResponse {
 
     public void setActivationToken(String activationToken) {
         this.activationToken = activationToken;
+    }
+
+    public Long getIdDepartamento() {
+        return idDepartamento;
+    }
+
+    public void setIdDepartamento(Long idDepartamento) {
+        this.idDepartamento = idDepartamento;
     }
 
 }
