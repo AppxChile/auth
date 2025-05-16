@@ -51,6 +51,11 @@ public class Usuario {
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL)
     private List<UsuarioDepartamentos> usuarioDepartamentos;
 
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "usuarios_perfiles", joinColumns = @JoinColumn(name = "usuario_id"), inverseJoinColumns = @JoinColumn(name = "perfil_id"), uniqueConstraints = @UniqueConstraint(columnNames = {
+            "usuario_id", "perfil_id" }))
+    private List<Perfil> perfiles;
+
     public Usuario() {
     }
 
