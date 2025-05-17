@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.auth.auth.dto.PasswordRequest;
 import com.auth.auth.services.interfaces.PasswordRecoveryService;
 
 @RestController
@@ -32,13 +33,13 @@ public class PasswordController {
     }
 
     @PostMapping("/reset")
-    public ResponseEntity<Object> resetPassword(@RequestParam String token, @RequestBody String newPassword) {
+    public ResponseEntity<Object> resetPassword(@RequestParam String token, @RequestBody PasswordRequest newPassword) {
         try {
             if (token == null || token.isEmpty()) {
                 return ResponseEntity.badRequest().body("El token es obligatorio.");
             }
 
-            if (newPassword == null || newPassword.isEmpty()) {
+            if (newPassword == null || newPassword.getNewPassword().isEmpty()) {
                 return ResponseEntity.badRequest().body("La nueva contraseña es obligatoria.");
             }
 

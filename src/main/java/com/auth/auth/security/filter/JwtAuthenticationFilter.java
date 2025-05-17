@@ -33,7 +33,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     private final JwtUtils jwtUtils;
 
-
     public JwtAuthenticationFilter(AuthenticationManager authenticationManager, JwtUtils jwtUtils) {
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;
@@ -89,7 +88,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         boolean isFunc = roles.stream()
                 .anyMatch(role -> role.getAuthority().equals("ROLE_FUNC"));
 
-        AuthenticationResponse body = new AuthenticationResponse(token, true,isFunc);
+        AuthenticationResponse body = new AuthenticationResponse(token, true, isFunc);
 
         response.getWriter().write(new ObjectMapper().writeValueAsString(body));
         response.setContentType(CONTENT_TYPE);
@@ -100,7 +99,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException failed) throws IOException, ServletException {
 
-        AuthenticationResponse body = new AuthenticationResponse("", false,false);
+        AuthenticationResponse body = new AuthenticationResponse("", false, false);
 
         response.getWriter().write(new ObjectMapper().writeValueAsString(body));
         response.setStatus(401);

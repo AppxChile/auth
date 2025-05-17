@@ -24,11 +24,11 @@ import java.util.Arrays;
 public class SpringSecurityConfig {
 
     private final AuthenticationConfiguration authenticationConfiguration;
-     private final JwtUtils jwtUtils;
+    private final JwtUtils jwtUtils;
 
-    public SpringSecurityConfig(AuthenticationConfiguration authenticationConfiguration,JwtUtils jwtUtils) {
+    public SpringSecurityConfig(AuthenticationConfiguration authenticationConfiguration, JwtUtils jwtUtils) {
         this.authenticationConfiguration = authenticationConfiguration;
-        this.jwtUtils=jwtUtils;
+        this.jwtUtils = jwtUtils;
     }
 
     @Bean
@@ -56,24 +56,24 @@ public class SpringSecurityConfig {
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    
+
         http.cors(cors -> cors.configurationSource(request -> {
-                CorsConfiguration configuration = new CorsConfiguration();
-                configuration.setAllowedOriginPatterns(Arrays.asList("*")); // Permitir todos los orígenes
-                configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                configuration.setAllowedHeaders(Arrays.asList("*")); // Permitir todos los encabezados
-                configuration.setAllowCredentials(true); // Permitir credenciales
-                return configuration;
-            }))
-            .authorizeHttpRequests(authz -> authz
-                .requestMatchers(HttpMethod.POST, "/api/auth/usuarios/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/auth/usuarios/**").permitAll()
-                .anyRequest().authenticated())
-            .addFilter(new JwtAuthenticationFilter(authenticationManager(),jwtUtils))
-            .addFilter(new JwtValidationFilter(authenticationManager(), jwtUtils))
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-    
+            CorsConfiguration configuration = new CorsConfiguration();
+            configuration.setAllowedOriginPatterns(Arrays.asList("*")); // Permitir todos los orígenes
+            configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+            configuration.setAllowedHeaders(Arrays.asList("*")); // Permitir todos los encabezados
+            configuration.setAllowCredentials(true); // Permitir credenciales
+            return configuration;
+        }))
+                .authorizeHttpRequests(authz -> authz
+                        .requestMatchers(HttpMethod.POST, "/api/auth/usuarios/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/usuarios/**").permitAll()
+                        .anyRequest().authenticated())
+                .addFilter(new JwtAuthenticationFilter(authenticationManager(), jwtUtils))
+                .addFilter(new JwtValidationFilter(authenticationManager(), jwtUtils))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
         return http.build();
     }
 }

@@ -24,12 +24,13 @@ public class SistemaController {
     }
 
     @PostMapping
-    public ResponseEntity<Object> createSistema(@RequestBody SistemaRequest request){
+    public ResponseEntity<Object> createSistema(@RequestBody SistemaRequest request) {
         try {
-            return ResponseEntity.ok(sistemaService.createSistema(request.getNombreSistema(), request.getCodigoSistema()));
+            return ResponseEntity
+                    .ok(sistemaService.createSistema(request.getNombreSistema(), request.getCodigoSistema()));
         } catch (SistemaException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }catch (Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor");
         }
     }

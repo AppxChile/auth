@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.auth.auth.api.PersonaResponse;
 import com.auth.auth.configuration.ApiProperties;
+import com.auth.auth.dto.PasswordRequest;
 import com.auth.auth.entities.PasswordResetToken;
 import com.auth.auth.entities.Usuario;
 import com.auth.auth.exceptions.SendMailExceptions;
@@ -72,7 +73,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
     }
 
     @Override
-    public void resetPassword(String token, String newPassword) {
+    public void resetPassword(String token, PasswordRequest newPassword) {
 
         PasswordResetToken passwordResetToken = passwordResetTokenService.getByToken(token);
 
@@ -82,7 +83,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
 
         Usuario usuario = passwordResetToken.getUsuario();
 
-        String encodedPassword = passwordEncoder.encode(newPassword);
+        String encodedPassword = passwordEncoder.encode(newPassword.getNewPassword());
         usuario.setPassword(encodedPassword);
         usuarioService.save(usuario);
 

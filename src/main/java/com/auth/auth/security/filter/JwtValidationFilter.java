@@ -31,11 +31,11 @@ import static com.auth.auth.security.TokenJwtConfig.*;
 
 public class JwtValidationFilter extends BasicAuthenticationFilter {
 
-     private final JwtUtils jwtUtils;
+    private final JwtUtils jwtUtils;
 
     public JwtValidationFilter(AuthenticationManager authenticationManager, JwtUtils jwtUtils) {
         super(authenticationManager);
-        this.jwtUtils=jwtUtils;
+        this.jwtUtils = jwtUtils;
     }
 
     @Override

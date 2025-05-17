@@ -13,13 +13,9 @@ public class Permiso {
     @Column(nullable = false)
     private String nombre;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sistema_id", nullable = false)
     private Sistema sistema;
-
-
- 
 
     public Permiso(String nombre, Sistema sistema) {
         this.nombre = nombre;

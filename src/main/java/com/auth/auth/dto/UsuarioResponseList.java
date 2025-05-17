@@ -8,8 +8,6 @@ public class UsuarioResponseList {
     private Integer rut;
     private String vrut;
 
-    
-
     public Integer getRut() {
         return rut;
     }

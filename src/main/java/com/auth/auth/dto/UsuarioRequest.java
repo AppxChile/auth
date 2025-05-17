@@ -13,8 +13,6 @@ public class UsuarioRequest {
     private boolean func;
     private Long idDepto;
 
-    
-
     public Integer getRut() {
         return rut;
     }

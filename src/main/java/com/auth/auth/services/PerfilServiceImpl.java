@@ -7,7 +7,6 @@ import com.auth.auth.services.interfaces.PerfilService;
 
 public class PerfilServiceImpl implements PerfilService {
 
-
     private final PerfilRepository perfilRepository;
 
     public PerfilServiceImpl(PerfilRepository perfilRepository) {
@@ -22,5 +21,5 @@ public class PerfilServiceImpl implements PerfilService {
         Perfil perfil = new Perfil();
         perfil.setNombre(nombre);
         return perfilRepository.save(perfil);
-}
+    }
 }

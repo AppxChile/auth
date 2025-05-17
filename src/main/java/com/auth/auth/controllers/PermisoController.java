@@ -24,13 +24,14 @@ public class PermisoController {
     }
 
     @PostMapping
-    public ResponseEntity<Object> createPermioso(@RequestBody PermisoRequest request){
+    public ResponseEntity<Object> createPermioso(@RequestBody PermisoRequest request) {
         try {
-            return ResponseEntity.ok(permisoService.createPermiso(request.getNombrePermiso(),  request.getCodigoSistema()));
-            
+            return ResponseEntity
+                    .ok(permisoService.createPermiso(request.getNombrePermiso(), request.getCodigoSistema()));
+
         } catch (PermisoException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }catch (Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor");
         }
     }
