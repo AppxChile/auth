@@ -17,6 +17,9 @@ public class Permiso {
     @JoinColumn(name = "sistema_id", nullable = false)
     private Sistema sistema;
 
+    public Permiso() {
+    }
+
     public Permiso(String nombre, Sistema sistema) {
         this.nombre = nombre;
         this.sistema = sistema;
@@ -44,5 +47,9 @@ public class Permiso {
 
     public void setSistema(Sistema sistema) {
         this.sistema = sistema;
+    }
+
+    public String getNombreSistema() {
+        return sistema != null ? sistema.getNombre() : null;
     }
 }

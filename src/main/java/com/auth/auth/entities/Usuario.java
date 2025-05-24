@@ -56,6 +56,24 @@ public class Usuario {
             "usuario_id", "perfil_id" }))
     private List<Perfil> perfiles;
 
+    
+
+    public List<UsuarioDepartamentos> getUsuarioDepartamentos() {
+        return usuarioDepartamentos;
+    }
+
+    public void setUsuarioDepartamentos(List<UsuarioDepartamentos> usuarioDepartamentos) {
+        this.usuarioDepartamentos = usuarioDepartamentos;
+    }
+
+    public List<Perfil> getPerfiles() {
+        return perfiles;
+    }
+
+    public void setPerfiles(List<Perfil> perfiles) {
+        this.perfiles = perfiles;
+    }
+
     public Usuario() {
     }
 

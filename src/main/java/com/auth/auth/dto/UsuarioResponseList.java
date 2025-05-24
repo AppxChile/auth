@@ -4,7 +4,7 @@ public class UsuarioResponseList {
 
     private String username;
     private String nombre;
-    private String departamento;
+    private Long idDepto;
     private Integer rut;
     private String vrut;
 
@@ -40,12 +40,15 @@ public class UsuarioResponseList {
         this.nombre = nombre;
     }
 
-    public String getDepartamento() {
-        return departamento;
+    public Long getIdDepto() {
+        return idDepto;
     }
 
-    public void setDepartamento(String departamento) {
-        this.departamento = departamento;
+    public void setIdDepto(Long idDpeto) {
+        this.idDepto = idDpeto;
     }
+
+
+
 
 }

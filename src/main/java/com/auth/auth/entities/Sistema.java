@@ -20,6 +20,9 @@ public class Sistema {
     @OneToMany(mappedBy = "sistema", cascade = CascadeType.ALL)
     private List<Permiso> permisos;
 
+    public Sistema() {
+    }
+
     public Sistema(String nombre, String codigo) {
         this.nombre = nombre;
         this.codigo = codigo;
@@ -56,4 +59,6 @@ public class Sistema {
     public void setPermisos(List<Permiso> permisos) {
         this.permisos = permisos;
     }
+
+
 }

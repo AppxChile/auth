@@ -22,6 +22,8 @@ public class Rol {
     @ManyToMany(mappedBy = "roles")
     private List<Usuario> usuarios;
 
+    
+
     public Rol() {
         this.usuarios = new ArrayList<>();
     }

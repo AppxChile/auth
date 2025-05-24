@@ -3,6 +3,7 @@ package com.auth.auth.security.filter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 import javax.crypto.SecretKey;
 
@@ -15,7 +16,10 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.auth.auth.dto.AuthenticationResponse;
+import com.auth.auth.dto.PerfilDto;
+import com.auth.auth.dto.PermisoDto;
 import com.auth.auth.entities.Usuario;
+import com.auth.auth.repositories.UsuarioRepository;
 import com.auth.auth.utils.JwtUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import static com.auth.auth.security.TokenJwtConfig.*;
@@ -32,10 +36,13 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private AuthenticationManager authenticationManager;
 
     private final JwtUtils jwtUtils;
+    private final UsuarioRepository usuarioRepository;
 
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, JwtUtils jwtUtils) {
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, JwtUtils jwtUtils,
+            UsuarioRepository usuarioRepository) {
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;
+        this.usuarioRepository = usuarioRepository;
     }
 
     @Override
@@ -69,6 +76,9 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         String username = user.getUsername();
         Collection<? extends GrantedAuthority> roles = authResult.getAuthorities();
 
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("no existe el usuario"));
+
         Claims claims = Jwts.claims()
                 .add("authorities", new ObjectMapper().writeValueAsString(roles))
                 .add("username", username).build();
@@ -88,7 +98,22 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         boolean isFunc = roles.stream()
                 .anyMatch(role -> role.getAuthority().equals("ROLE_FUNC"));
 
-        AuthenticationResponse body = new AuthenticationResponse(token, true, isFunc);
+        List<PerfilDto> perfilDtoList = usuario.getPerfiles().stream().map(perfilUsuario -> {
+            PerfilDto dto = new PerfilDto();
+            dto.setNombre(perfilUsuario.getNombre());
+
+            List<PermisoDto> permisos = perfilUsuario.getPermisos().stream().map(permiso -> {
+                PermisoDto permisoDto = new PermisoDto();
+                permisoDto.setNombre(permiso.getNombre());
+                permisoDto.setNombreSistema(permiso.getNombreSistema());
+                return permisoDto;
+            }).toList();
+
+            dto.setPermisos(permisos);
+            return dto;
+        }).toList();
+
+        AuthenticationResponse body = new AuthenticationResponse(token, true, isFunc, perfilDtoList);
 
         response.getWriter().write(new ObjectMapper().writeValueAsString(body));
         response.setContentType(CONTENT_TYPE);

@@ -54,4 +54,8 @@ public class UsuarioDepartamentos {
         this.departamento = departamento;
     }
 
+    public Long getNombreDepartamento() {
+        return departamento != null ? departamento.getId() : null;
+    }
+
 }

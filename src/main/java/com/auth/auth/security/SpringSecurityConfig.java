@@ -14,6 +14,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import com.auth.auth.repositories.UsuarioRepository;
 import com.auth.auth.security.filter.JwtAuthenticationFilter;
 import com.auth.auth.security.filter.JwtValidationFilter;
 import com.auth.auth.utils.JwtUtils;
@@ -25,10 +26,12 @@ public class SpringSecurityConfig {
 
     private final AuthenticationConfiguration authenticationConfiguration;
     private final JwtUtils jwtUtils;
+     private final UsuarioRepository usuarioRepository;
 
-    public SpringSecurityConfig(AuthenticationConfiguration authenticationConfiguration, JwtUtils jwtUtils) {
+    public SpringSecurityConfig(AuthenticationConfiguration authenticationConfiguration, JwtUtils jwtUtils,UsuarioRepository usuarioRepository) {
         this.authenticationConfiguration = authenticationConfiguration;
         this.jwtUtils = jwtUtils;
+        this.usuarioRepository = usuarioRepository;
     }
 
     @Bean
@@ -69,7 +72,7 @@ public class SpringSecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/usuarios/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/usuarios/**").permitAll()
                         .anyRequest().authenticated())
-                .addFilter(new JwtAuthenticationFilter(authenticationManager(), jwtUtils))
+                .addFilter(new JwtAuthenticationFilter(authenticationManager(), jwtUtils,usuarioRepository))
                 .addFilter(new JwtValidationFilter(authenticationManager(), jwtUtils))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
