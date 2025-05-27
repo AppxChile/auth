@@ -1,7 +1,9 @@
 package com.auth.auth.entities;
 
 import jakarta.persistence.*;
-import java.util.List;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "sistemas")
@@ -17,8 +19,11 @@ public class Sistema {
     @Column(nullable = false, unique = true)
     private String codigo;
 
-    @OneToMany(mappedBy = "sistema", cascade = CascadeType.ALL)
-    private List<Permiso> permisos;
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "sistema", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Modulo> modulos = new HashSet<>();
+
+    @ManyToMany(mappedBy = "sistemas")
+    private Set<Perfil> perfiles;
 
     public Sistema() {
     }
@@ -27,6 +32,8 @@ public class Sistema {
         this.nombre = nombre;
         this.codigo = codigo;
     }
+
+    // Getters y Setters
 
     public Long getId() {
         return id;
@@ -52,13 +59,32 @@ public class Sistema {
         this.codigo = codigo;
     }
 
-    public List<Permiso> getPermisos() {
-        return permisos;
+    public Set<Modulo> getModulos() {
+        return modulos;
     }
 
-    public void setPermisos(List<Permiso> permisos) {
-        this.permisos = permisos;
+    public void setModulos(Set<Modulo> modulos) {
+        this.modulos = modulos;
     }
 
+    public Set<Perfil> getPerfiles() {
+        return perfiles;
+    }
+
+    public void setPerfiles(Set<Perfil> perfiles) {
+        this.perfiles = perfiles;
+    }
+
+    // Métodos auxiliares para mantener consistencia bidireccional
+
+    public void addModulo(Modulo modulo) {
+        modulos.add(modulo);
+        modulo.setSistema(this);
+    }
+
+    public void removeModulo(Modulo modulo) {
+        modulos.remove(modulo);
+        modulo.setSistema(null);
+    }
 
 }

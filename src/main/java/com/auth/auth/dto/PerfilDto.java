@@ -1,27 +1,34 @@
 package com.auth.auth.dto;
 
-import java.util.List;
+import java.util.Set;
+
 public class PerfilDto {
 
+    private Long id;
     private String nombre;
-    private List<PermisoDto> permisos;
-
+    private Set<SistemaDto> sistemas;
+    public Long getId() {
+        return id;
+    }
+    public void setId(Long id) {
+        this.id = id;
+    }
     public String getNombre() {
         return nombre;
     }
-
     public void setNombre(String nombre) {
         this.nombre = nombre;
     }
-
-    public List<PermisoDto> getPermisos() {
-        return permisos;
+    public Set<SistemaDto> getSistemas() {
+        return sistemas;
+    }
+    public void setSistemas(Set<SistemaDto> sistemas) {
+        this.sistemas = sistemas;
     }
 
-    public void setPermisos(List<PermisoDto> permisos) {
-        this.permisos = permisos;
-    }
+   
 
 
-    
+ 
+
 }

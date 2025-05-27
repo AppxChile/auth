@@ -56,8 +56,6 @@ public class Usuario {
             "usuario_id", "perfil_id" }))
     private List<Perfil> perfiles;
 
-    
-
     public List<UsuarioDepartamentos> getUsuarioDepartamentos() {
         return usuarioDepartamentos;
     }

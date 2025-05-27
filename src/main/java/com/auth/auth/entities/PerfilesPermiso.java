@@ -1,9 +1,11 @@
 package com.auth.auth.entities;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+@Entity
 @Table(name = "perfiles_permisos")
 public class PerfilesPermiso {
 

@@ -1,9 +1,10 @@
 package com.auth.auth.services.interfaces;
 
-import com.auth.auth.entities.Perfil;
+import com.auth.auth.dto.PerfilRequest;
+import com.auth.auth.dto.PerfilResponse;
 
 public interface PerfilService {
 
-       Perfil createPerfil(String nombre);
+       PerfilResponse crearPerfil(PerfilRequest request);
 
 }

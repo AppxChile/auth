@@ -8,8 +8,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.auth.auth.dto.ApiError;
 import com.auth.auth.dto.PermisoRequest;
-import com.auth.auth.exceptions.PermisoException;
+import com.auth.auth.dto.PermisoResponse;
 import com.auth.auth.services.interfaces.PermisoService;
 
 @RestController
@@ -23,16 +24,16 @@ public class PermisoController {
         this.permisoService = permisoService;
     }
 
-    @PostMapping
-    public ResponseEntity<Object> createPermioso(@RequestBody PermisoRequest request) {
+   @PostMapping
+    public ResponseEntity<Object> crearPermiso(@RequestBody PermisoRequest request) {
         try {
-            return ResponseEntity
-                    .ok(permisoService.createPermiso(request.getNombrePermiso(), request.getCodigoSistema()));
-
-        } catch (PermisoException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+            PermisoResponse permiso = permisoService.crearPermiso(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(permiso);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiError("Datos inválidos", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiError("Error interno", e.getMessage()));
         }
     }
 

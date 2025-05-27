@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import javax.crypto.SecretKey;
 
@@ -16,8 +17,11 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.auth.auth.dto.AuthenticationResponse;
+import com.auth.auth.dto.ModuloDto;
 import com.auth.auth.dto.PerfilDto;
 import com.auth.auth.dto.PermisoDto;
+import com.auth.auth.dto.SistemaDto;
+import com.auth.auth.entities.Perfil;
 import com.auth.auth.entities.Usuario;
 import com.auth.auth.repositories.UsuarioRepository;
 import com.auth.auth.utils.JwtUtils;
@@ -30,6 +34,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.stream.Collectors;
 
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
@@ -79,6 +84,40 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("no existe el usuario"));
 
+        List<Perfil> perfilesUsuario = usuario.getPerfiles();
+
+        List<PerfilDto> perfilesDto = perfilesUsuario.stream().map(perfil -> {
+            PerfilDto dto = new PerfilDto();
+            dto.setId(perfil.getId());
+            dto.setNombre(perfil.getNombre());
+
+            // Ahora perfil.getSistemas() devuelve un Set<Sistema>
+            Set<SistemaDto> sistemasDto = perfil.getSistemas().stream().map(sistema -> {
+                SistemaDto sistemaDto = new SistemaDto();
+                sistemaDto.setNombreSistema(sistema.getNombre());
+                sistemaDto.setCodSistema(sistema.getCodigo()); // Ajusta si usas otro nombre de campo
+
+                Set<ModuloDto> modulosDto = sistema.getModulos().stream().map(modulo -> {
+                    ModuloDto moduloDto = new ModuloDto();
+                    moduloDto.setIdModulo(modulo.getId());
+                    moduloDto.setNombreModulo(modulo.getNombre());
+
+                    Set<PermisoDto> permisoDtos = modulo.getPermisos().stream()
+                            .map(permiso -> new PermisoDto(permiso.getId(), permiso.getNombre()))
+                            .collect(Collectors.toSet());
+
+                    moduloDto.setPermisos(permisoDtos);
+                    return moduloDto;
+                }).collect(Collectors.toSet());
+
+                sistemaDto.setModulos(modulosDto);
+                return sistemaDto;
+            }).collect(Collectors.toSet());
+
+            dto.setSistemas(sistemasDto);
+            return dto;
+        }).toList();
+
         Claims claims = Jwts.claims()
                 .add("authorities", new ObjectMapper().writeValueAsString(roles))
                 .add("username", username).build();
@@ -98,22 +137,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         boolean isFunc = roles.stream()
                 .anyMatch(role -> role.getAuthority().equals("ROLE_FUNC"));
 
-        List<PerfilDto> perfilDtoList = usuario.getPerfiles().stream().map(perfilUsuario -> {
-            PerfilDto dto = new PerfilDto();
-            dto.setNombre(perfilUsuario.getNombre());
-
-            List<PermisoDto> permisos = perfilUsuario.getPermisos().stream().map(permiso -> {
-                PermisoDto permisoDto = new PermisoDto();
-                permisoDto.setNombre(permiso.getNombre());
-                permisoDto.setNombreSistema(permiso.getNombreSistema());
-                return permisoDto;
-            }).toList();
-
-            dto.setPermisos(permisos);
-            return dto;
-        }).toList();
-
-        AuthenticationResponse body = new AuthenticationResponse(token, true, isFunc, perfilDtoList);
+        AuthenticationResponse body = new AuthenticationResponse(token, true, isFunc, perfilesDto);
 
         response.getWriter().write(new ObjectMapper().writeValueAsString(body));
         response.setContentType(CONTENT_TYPE);

@@ -13,9 +13,13 @@ public class Permiso {
     @Column(nullable = false)
     private String nombre;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sistema_id", nullable = false)
     private Sistema sistema;
+
+    @ManyToOne
+    @JoinColumn(name = "modulo_id", nullable = false)
+    private Modulo modulo;
 
     public Permiso() {
     }
@@ -51,5 +55,17 @@ public class Permiso {
 
     public String getNombreSistema() {
         return sistema != null ? sistema.getNombre() : null;
+    }
+
+    public String getCodSistema() {
+        return sistema != null ? sistema.getCodigo() : null;
+    }
+
+    public Modulo getModulo() {
+        return modulo;
+    }
+
+    public void setModulo(Modulo modulo) {
+        this.modulo = modulo;
     }
 }

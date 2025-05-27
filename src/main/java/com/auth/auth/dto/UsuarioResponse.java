@@ -9,48 +9,31 @@ public class UsuarioResponse {
     private Long idDepartamento;
     private Boolean isFunc;
 
-    
     private List<PerfilDto> perfiles;
 
     public UsuarioResponse() {
     }
 
-
-
-
-    
     public UsuarioResponse(String activationToken, Boolean isFunc, List<PerfilDto> perfiles) {
         this.activationToken = activationToken;
         this.isFunc = isFunc;
         this.perfiles = perfiles;
     }
 
-
-
-
-
     public UsuarioResponse(String activationToken, Boolean isFunc) {
         this.activationToken = activationToken;
         this.isFunc = isFunc;
     }
 
-
-
-
-
     public UsuarioResponse(String username) {
         this.username = username;
     }
 
-
-    
     public UsuarioResponse(String username, String activationToken, Boolean isFunc) {
         this.username = username;
         this.activationToken = activationToken;
         this.isFunc = isFunc;
     }
-
-
 
     public UsuarioResponse(String username, String activationToken) {
         this.username = username;
@@ -89,18 +72,12 @@ public class UsuarioResponse {
         this.perfiles = perfiles;
     }
 
-
-
     public Boolean getIsFunc() {
         return isFunc;
     }
 
-
-
     public void setIsFunc(Boolean isFunc) {
         this.isFunc = isFunc;
     }
-
-   
 
 }

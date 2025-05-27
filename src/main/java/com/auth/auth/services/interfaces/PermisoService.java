@@ -1,9 +1,10 @@
 package com.auth.auth.services.interfaces;
 
-import com.auth.auth.entities.Permiso;
+import com.auth.auth.dto.PermisoRequest;
+import com.auth.auth.dto.PermisoResponse;
 
 public interface PermisoService {
 
-    Permiso createPermiso(String name, String codeSitema);
+    PermisoResponse crearPermiso(PermisoRequest request);
 
 }

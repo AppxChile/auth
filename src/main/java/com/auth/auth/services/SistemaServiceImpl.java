@@ -1,7 +1,12 @@
 package com.auth.auth.services;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 
+import com.auth.auth.dto.SistemaRequest;
+import com.auth.auth.dto.SistemaResponse;
 import com.auth.auth.entities.Sistema;
 import com.auth.auth.exceptions.SistemaException;
 import com.auth.auth.repositories.SistemaRepository;
@@ -17,17 +22,34 @@ public class SistemaServiceImpl implements SistemaService {
     }
 
     @Override
-    public Sistema createSistema(String name, String code) {
-        if (name == null || name.isBlank() || code == null || code.isBlank()) {
-            throw new SistemaException("Nombre y código del sistema son obligatorios");
+    public SistemaResponse createSistema(SistemaRequest request) {
+        if (sistemaRepository.existsByCodigo(request.getCodigoSistema())) {
+            throw new SistemaException("Ya existe un sistema con el código: " + request.getCodigoSistema());
         }
 
-        if (sistemaRepository.findByCodigo(code).isPresent()) {
-            throw new SistemaException("El sistema ya existe");
-        }
+        Sistema sistema = new Sistema();
+        sistema.setNombre(request.getNombreSistema().toUpperCase());
+        sistema.setCodigo(request.getCodigoSistema().toUpperCase());
 
-        return sistemaRepository.save(new Sistema(name, code));
+        sistema = sistemaRepository.save(sistema);
+        return new SistemaResponse(sistema.getId(), sistema.getNombre(), sistema.getCodigo());
+    }
 
+    @Override
+    public void eliminarSistema(Long id) {
+        sistemaRepository.deleteById(id);
+    }
+
+    @Override
+    public Optional<Sistema> buscarPorId(Long id) {
+        return sistemaRepository.findById(id);
+    }
+
+    @Override
+    public List<SistemaResponse> listarTodos() {
+        return sistemaRepository.findAll().stream()
+                .map(s -> new SistemaResponse(s.getId(), s.getNombre(), s.getCodigo()))
+                .toList();
     }
 
 }

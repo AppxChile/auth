@@ -15,16 +15,12 @@ public class AuthenticationResponse {
         this.func = func;
     }
 
-    
-
     public AuthenticationResponse(String token, Boolean successful, Boolean func, List<PerfilDto> perfil) {
         this.token = token;
         this.successful = successful;
         this.func = func;
         this.perfil = perfil;
     }
-
-
 
     public String getToken() {
         return token;

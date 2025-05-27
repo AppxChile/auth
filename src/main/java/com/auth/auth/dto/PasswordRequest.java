@@ -2,7 +2,6 @@ package com.auth.auth.dto;
 
 public class PasswordRequest {
 
-
     private String newPassword;
 
     public String getNewPassword() {
@@ -12,7 +11,5 @@ public class PasswordRequest {
     public void setNewPassword(String newPassword) {
         this.newPassword = newPassword;
     }
-
-    
 
 }

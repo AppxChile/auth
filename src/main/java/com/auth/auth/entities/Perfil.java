@@ -1,7 +1,8 @@
 package com.auth.auth.entities;
 
 import jakarta.persistence.*;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "perfiles")
@@ -14,15 +15,14 @@ public class Perfil {
     @Column(nullable = false, unique = true)
     private String nombre;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "perfiles_permisos", joinColumns = @JoinColumn(name = "perfil_id"), inverseJoinColumns = @JoinColumn(name = "permiso_id"))
-    private List<Permiso> permisos;
+    @ManyToMany(mappedBy = "perfiles", fetch = FetchType.LAZY)
+    private Set<Usuario> usuarios = new HashSet<>();
 
-    @ManyToMany(mappedBy = "perfiles")
-    private List<Usuario> usuarios;
+    @ManyToMany
+    @JoinTable(name = "perfil_sistema", joinColumns = @JoinColumn(name = "perfil_id"), inverseJoinColumns = @JoinColumn(name = "sistema_id"))
+    private Set<Sistema> sistemas;
 
     // Getters y Setters
-
     public Long getId() {
         return id;
     }
@@ -39,11 +39,31 @@ public class Perfil {
         this.nombre = nombre;
     }
 
-    public List<Permiso> getPermisos() {
-        return permisos;
+    public Set<Usuario> getUsuarios() {
+        return usuarios;
     }
 
-    public void setPermisos(List<Permiso> permisos) {
-        this.permisos = permisos;
+    public void setUsuarios(Set<Usuario> usuarios) {
+        this.usuarios = usuarios;
     }
+
+    
+    public void addUsuario(Usuario usuario) {
+        usuarios.add(usuario);
+    }
+
+    public void removeUsuario(Usuario usuario) {
+        usuarios.remove(usuario);
+    }
+
+    public Set<Sistema> getSistemas() {
+        return sistemas;
+    }
+
+    public void setSistemas(Set<Sistema> sistemas) {
+        this.sistemas = sistemas;
+    }
+
+ 
+
 }
