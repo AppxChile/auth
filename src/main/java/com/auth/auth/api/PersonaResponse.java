@@ -57,4 +57,8 @@ public class PersonaResponse {
         this.email = email;
     }
 
+    public String getNombreCompleto() {
+        return nombres + " " + paterno + " " + materno;
+    }
+
 }

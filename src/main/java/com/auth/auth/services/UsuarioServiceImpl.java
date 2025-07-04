@@ -89,12 +89,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 
                     UsuarioDepartamentos usuarioDepartamentos = usuarioDepartamentosService.findByUsuario(res);
 
-                    String nombre = personaResponse.getNombres() + " ";
-                    String paterno = personaResponse.getPaterno() + " ";
-                    String materno = personaResponse.getMaterno();
-
                     dto.setUsername(res.getUsername());
-                    dto.setNombre(nombre.concat(paterno).concat(materno));
+                    dto.setNombre(personaResponse.getNombreCompleto());
                     dto.setRut(personaResponse.getRut());
                     dto.setVrut(personaResponse.getVrut());
                     dto.setIdDepto(usuarioDepartamentos != null

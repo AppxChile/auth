@@ -4,6 +4,8 @@ import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import org.springframework.stereotype.Service;
+
 import com.auth.auth.dto.PerfilRequest;
 import com.auth.auth.dto.PerfilResponse;
 import com.auth.auth.entities.Perfil;
@@ -12,6 +14,7 @@ import com.auth.auth.repositories.PerfilRepository;
 import com.auth.auth.repositories.SistemaRepository;
 import com.auth.auth.services.interfaces.PerfilService;
 
+@Service
 public class PerfilServiceImpl implements PerfilService {
 
     private final PerfilRepository perfilRepository;

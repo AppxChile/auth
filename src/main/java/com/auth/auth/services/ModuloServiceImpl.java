@@ -1,5 +1,7 @@
 package com.auth.auth.services;
 
+import org.springframework.stereotype.Service;
+
 import com.auth.auth.dto.ModuloRequest;
 import com.auth.auth.dto.ModuloResponse;
 import com.auth.auth.entities.Modulo;
@@ -8,6 +10,7 @@ import com.auth.auth.repositories.ModuloRepository;
 import com.auth.auth.repositories.SistemaRepository;
 import com.auth.auth.services.interfaces.ModuloService;
 
+@Service
 public class ModuloServiceImpl implements ModuloService {
 
     private final ModuloRepository moduloRepository;
