@@ -9,6 +9,7 @@ import com.auth.auth.entities.Sistema;
 import com.auth.auth.repositories.ModuloRepository;
 import com.auth.auth.repositories.SistemaRepository;
 import com.auth.auth.services.interfaces.ModuloService;
+import com.auth.auth.utils.RepositoryUtils;
 
 @Service
 public class ModuloServiceImpl implements ModuloService {
@@ -23,8 +24,7 @@ public class ModuloServiceImpl implements ModuloService {
 
     @Override
     public ModuloResponse crearModulo(ModuloRequest request) {
-        Sistema sistema = sistemaRepository.findById(request.getSistemaId())
-                .orElseThrow(() -> new IllegalArgumentException("Sistema no encontrado"));
+        Sistema sistema = getSistemaById(request.getSistemaId());
 
         Modulo modulo = new Modulo();
         modulo.setCodigo(request.getCodigo());
@@ -38,5 +38,10 @@ public class ModuloServiceImpl implements ModuloService {
                 guardado.getCodigo(),
                 guardado.getNombre(),
                 guardado.getSistema().getNombre());
+    }
+
+    private Sistema getSistemaById(Long idSistema) {
+        return RepositoryUtils.findOrThrow(sistemaRepository.findById(idSistema),
+                String.format("No se encontró el sistmea con el id %d", idSistema));
     }
 }

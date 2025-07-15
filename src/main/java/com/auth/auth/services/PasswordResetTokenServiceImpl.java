@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import com.auth.auth.entities.PasswordResetToken;
 import com.auth.auth.repositories.PasswordResetTokenRepository;
 import com.auth.auth.services.interfaces.PasswordResetTokenService;
+import com.auth.auth.utils.RepositoryUtils;
 
 @Service
 public class PasswordResetTokenServiceImpl implements PasswordResetTokenService {
@@ -23,8 +24,9 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
 
     @Override
     public PasswordResetToken getByToken(String token) {
-        return passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("Token inválido o expirado"));
+
+        return RepositoryUtils.findOrThrow(passwordResetTokenRepository.findByToken(token),
+                String.format("Token %s no encontrado", token));
     }
 
     @Override

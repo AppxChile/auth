@@ -1,7 +1,6 @@
 package com.auth.auth.services;
 
 import java.util.HashSet;
-import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
@@ -13,6 +12,7 @@ import com.auth.auth.entities.Sistema;
 import com.auth.auth.repositories.PerfilRepository;
 import com.auth.auth.repositories.SistemaRepository;
 import com.auth.auth.services.interfaces.PerfilService;
+import com.auth.auth.utils.RepositoryUtils;
 
 @Service
 public class PerfilServiceImpl implements PerfilService {
@@ -33,8 +33,8 @@ public class PerfilServiceImpl implements PerfilService {
 
         Set<Sistema> sistemas = new HashSet<>();
         for (Long sistemaId : request.getSistemaIds()) {
-            Sistema sistema = sistemaRepository.findById(sistemaId)
-                    .orElseThrow(() -> new NoSuchElementException("Sistema no encontrado con ID: " + sistemaId));
+            Sistema sistema = getSitemaById(sistemaId);
+
             sistemas.add(sistema);
         }
 
@@ -47,5 +47,10 @@ public class PerfilServiceImpl implements PerfilService {
         }
 
         return new PerfilResponse(guardado.getId(), guardado.getNombre(), nombresSistemas);
+    }
+
+    private Sistema getSitemaById(Long idSistema) {
+        return RepositoryUtils.findOrThrow(sistemaRepository.findById(idSistema),
+                String.format("Sistma con %d no encontrado", idSistema));
     }
 }

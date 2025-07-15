@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +30,7 @@ import com.auth.auth.services.interfaces.DepartamentoService;
 import com.auth.auth.services.interfaces.PersonaService;
 import com.auth.auth.services.interfaces.RolService;
 import com.auth.auth.services.interfaces.UsuarioDepartamentosService;
+import com.auth.auth.utils.RepositoryUtils;
 
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
@@ -261,8 +261,8 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public UsuarioResponse getUsuario(String username) {
 
-        Usuario usuario = usuarioRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("No existe el usuario"));
+        Usuario usuario = RepositoryUtils.findOrThrow(usuarioRepository.findByUsername(username),
+                String.format("Usuario %s no encontrad0", username));
 
         UsuarioDepartamentos usuarioDepartamentos = usuarioDepartamentosService.findByUsuario(usuario);
 
@@ -276,9 +276,9 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public Usuario getUsuarioByPersona(Persona persona) {
 
-        return usuarioRepository.findByPersona(persona)
-                .orElseThrow(
-                        () -> new IllegalArgumentException("Usuario no encontrado para el RUT: " + persona.getRut()));
+        return RepositoryUtils.findOrThrow(usuarioRepository.findByPersona(persona),
+                String.format("Persona con el rut %d no encontrada", persona.getRut()));
+
     }
 
     @Override
@@ -289,9 +289,9 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public Usuario findByUsername(String username) {
 
-        return usuarioRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException(
-                        String.format("El usuario %s no ha sido encontrado", username)));
+        return RepositoryUtils.findOrThrow(usuarioRepository.findByUsername(username),
+                String.format("Usuairo %s no encontrado", username));
+
     }
 
 }
